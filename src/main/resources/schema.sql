@@ -23,5 +23,6 @@ CREATE TABLE IF NOT EXISTS articles (
     updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (authorId) REFERENCES authors(id) ON DELETE CASCADE
+    CONSTRAINT unique_author_article UNIQUE (authorId, title)
 );
 

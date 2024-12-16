@@ -10,7 +10,7 @@ public interface AuthorService {
 
   public Author addAuthor(Author author);
 
-  public List<Author> getAllAuthors(String sort, Long limit, Long start);
+  public List<?> getAllAuthors(String sort, Long limit, Long start);
 
   public Author editAuthor(Author author, String id);
 

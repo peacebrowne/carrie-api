@@ -7,7 +7,7 @@ import com.example.carrie.entities.Article;
 public interface ArticleService {
   public Article getArticleById(String id);
 
-  public List<Article> getAllArticles(String sort, String order, Long limit, Long start);
+  public List<Article> getAllArticles(String sort, Long limit, Long start);
 
   public Article addArticle(Article article);
 

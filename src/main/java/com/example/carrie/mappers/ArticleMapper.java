@@ -10,25 +10,24 @@ import com.example.carrie.entities.Article;
 public interface ArticleMapper {
 
     @Select("SELECT title FROM articles WHERE title =#{title}")
-    Article findByTitle(@Param("title") String title);
+    List<Article> findByTitle(@Param("title") String title);
 
-    @Select("SELECT * FROM articles WHERE id = #{id}")
+    @Select("SELECT * FROM articles WHERE id = #{id}::uuid")
     Article findById(@Param("id") String id);
 
-    @Select("SELECT * FROM articles ORDER BY #{sort} #{order} LIMIT #{limit} OFFSET #{start}")
-    List<Article> findAll(@Param("sort") String sort, @Param("order") String order, @Param("limit") Long limit,
-            @Param("start") Long start);
+    @Select("SELECT * FROM articles ORDER BY #{sort} DESC LIMIT #{limit} OFFSET #{start}")
+    List<Article> findAll(@Param("sort") String sort, @Param("limit") Long limit, @Param("start") Long start);
 
-    @Select("SELECT * FROM articles WHERE authorId =#{authorId}")
+    @Select("SELECT * FROM articles WHERE authorId =#{authorId}::uuid")
     List<Article> findAuthorsArticles(@Param("authorId") String authorId);
 
-    @Insert("INSERT INTO articles (id, title, authorId, content) VALUES (#{id}, #{title}, #{authorId}, #{content}) RETURNING *")
+    @Select("INSERT INTO articles (title, authorId, content) VALUES (#{title}, #{authorId}::uuid, #{content}) RETURNING *")
     Article addArticle(Article article);
 
-    @Update("UPDATE articles SET title = #{title}, content = #{content} WHERE id = #{id} RETURNING *")
-    Article editArticle(@Param("title") String title, @Param("content") String content, @Param("id") String id);
+    @Select("UPDATE articles SET title = #{title}, content = #{content} WHERE id = #{id}::uuid RETURNING *")
+    Article editArticle(Article article);
 
-    @Delete("DELETE FROM articles WHERE id = #{id}")
+    @Select("DELETE FROM articles WHERE id = #{id}::uuid")
     Article deleteArticle(@Param("id") String id);
 
 }

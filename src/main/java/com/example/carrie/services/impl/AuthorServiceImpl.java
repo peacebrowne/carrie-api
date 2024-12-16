@@ -10,8 +10,8 @@ import com.example.carrie.services.AuthorService;
 import com.example.carrie.utils.EmailValidator;
 import com.example.carrie.utils.UUIDValidator;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -21,11 +21,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
+@Transactional
 public class AuthorServiceImpl implements AuthorService {
     private final AuthorMapper authorMapper;
     private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
 
-    @Autowired
     public AuthorServiceImpl(AuthorMapper authorMapper) {
         this.authorMapper = authorMapper;
     }
@@ -38,18 +38,18 @@ public class AuthorServiceImpl implements AuthorService {
                 throw new BadRequest("Invalid author ID!");
             }
 
-            Author author = authorMapper.findById(id);
+            Optional<Author> author = Optional.ofNullable(authorMapper.findById(id));
 
-            if (author == null) {
+            if (author.isEmpty()) {
                 throw new NotFound("Author with this id '" + id + "' does not exist!");
             }
 
-            return authorMapper.findById(id);
+            return author.get();
         } catch (BadRequest | NotFound e) {
-            log.error("ERROR:  " + e.getMessage());
+            log.error("ERROR: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            log.error("ERROR:  " + e.getMessage());
+            log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
                     "An unexpected error occured while fetching the author.");
         }
@@ -61,7 +61,7 @@ public class AuthorServiceImpl implements AuthorService {
         try {
             return authorMapper.findAll(sort, limit, start);
         } catch (Exception e) {
-            log.error("ERROR:  " + e.getMessage());
+            log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
                     "An unexpected error occured while fetching authors.");
         }
@@ -78,7 +78,7 @@ public class AuthorServiceImpl implements AuthorService {
                 throw new BadRequest("Invalid email address!");
             }
 
-            Optional<Author> authorExist = authorMapper.findByEmail(email);
+            Optional<Author> authorExist = Optional.ofNullable(authorMapper.findByEmail(email));
 
             if (authorExist.isPresent()) {
                 throw new BadRequest("User with this email '" + email + "' already exist");
@@ -86,10 +86,10 @@ public class AuthorServiceImpl implements AuthorService {
 
             return authorMapper.addAuthor(author);
         } catch (BadRequest e) {
-            log.error("ERROR:  " + e.getMessage());
+            log.error("Bad Request: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            log.error("ERROR:  " + e.getMessage());
+            log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
                     "An unexpected error occured while adding the author.");
 
@@ -97,48 +97,40 @@ public class AuthorServiceImpl implements AuthorService {
     }
 
     @Override
-    public Author editAuthor(Author a, String id) {
+    public Author editAuthor(Author author, String id) {
         try {
 
-            if (!UUIDValidator.isValidUUID(id)) {
-                throw new BadRequest("Invalid author ID!");
-            }
+            Author existingAuthor = getAuthorById(id);
 
-            Author author = authorMapper.findById(id);
+            if (author.getEmail() != null) {
 
-            if (author == null) {
-                throw new NotFound("Author with this id '" + id + "' does not exist!");
-            }
-
-            if (a.getEmail() != null) {
-
-                if (!EmailValidator.isValidEmail(a.getEmail())) {
+                if (!EmailValidator.isValidEmail(author.getEmail())) {
                     throw new BadRequest("Invalid email address!");
                 }
 
-                if (!Objects.equals(a.getEmail(), author.getEmail())) {
+                if (!Objects.equals(author.getEmail(), existingAuthor.getEmail())) {
 
-                    Optional<Author> authorOptional = authorMapper.findByEmail(a.getEmail());
+                    Optional<Author> authorOptional = Optional.ofNullable(authorMapper.findByEmail(author.getEmail()));
 
                     if (authorOptional.isPresent()) {
                         throw new BadRequest("Email is already taken!");
                     }
 
-                    author.setEmail(a.getEmail());
+                    existingAuthor.setEmail(author.getEmail());
 
                 }
             }
 
-            Optional.ofNullable(a.getDob()).ifPresent(dob -> author.setDob(dob));
-            Optional.ofNullable(a.getGender()).ifPresent(gender -> author.setGender(gender));
-            Optional.ofNullable(a.getName()).ifPresent(name -> author.setName(name));
+            Optional.ofNullable(author.getDob()).ifPresent(dob -> existingAuthor.setDob(dob));
+            Optional.ofNullable(author.getGender()).ifPresent(gender -> existingAuthor.setGender(gender));
+            Optional.ofNullable(author.getName()).ifPresent(name -> existingAuthor.setName(name));
 
-            return authorMapper.editAuthor(author);
+            return authorMapper.editAuthor(existingAuthor);
         } catch (BadRequest | NotFound e) {
-            log.error("ERROR:  " + e.getMessage());
+            log.error("Bad Request: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            log.error("ERROR:  " + e.getMessage());
+            log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
                     "An unexpected error occured while editing the author.");
         }
@@ -146,28 +138,19 @@ public class AuthorServiceImpl implements AuthorService {
 
     @Override
     public Author deleteAuthor(String id) {
-
         try {
-            if (!UUIDValidator.isValidUUID(id)) {
-                throw new BadRequest("Invalid author ID");
-            }
 
-            Author author = getAuthorById(id);
-
-            if (author == null) {
-                throw new NotFound("Author with this id '" + id + "' does not exist!");
-            }
+            getAuthorById(id);
 
             return authorMapper.deleteAuthor(id);
+
         } catch (BadRequest | NotFound e) {
-            log.error("ERROR:  " + e.getMessage());
+            log.error("ERROR: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            log.error("ERROR:  " + e.getMessage());
-            throw new InternalServerError(
-                    "An unexpected error occured while deleting the author.");
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError("An unexpected error occurred while deleting the author.");
         }
-
     }
 
 }

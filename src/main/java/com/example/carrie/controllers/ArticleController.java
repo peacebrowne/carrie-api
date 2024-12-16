@@ -3,10 +3,15 @@ package com.example.carrie.controllers;
 import java.util.List;
 
 import com.example.carrie.success.Success;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.carrie.entities.Article;
+import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.services.impl.ArticleServiceImpl;
 
 @RestController
@@ -21,11 +26,10 @@ public class ArticleController {
   @GetMapping
   public ResponseEntity<?> getAllArticles(
       @RequestParam(required = false, defaultValue = "created_at") String sort,
-      @RequestParam(required = false, defaultValue = "ASC") String order,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    List<Article> articles = articleServiceImpl.getAllArticles(sort, order, limit, start);
+    List<Article> articles = articleServiceImpl.getAllArticles(sort, limit, start);
     return Success.OK("Successfully Retrieved all Articles.", articles);
   }
 
@@ -44,7 +48,12 @@ public class ArticleController {
   };
 
   @PostMapping
-  public ResponseEntity<?> addArticle(@RequestBody Article article) {
+  public ResponseEntity<?> addArticle(@Valid @RequestBody Article article, BindingResult result) {
+
+    if (result.hasErrors()) {
+      throw new BadRequest(result.getAllErrors().get(0).getDefaultMessage());
+    }
+
     Article createdArticle = articleServiceImpl.addArticle(article);
     List<Article> data = List.of(createdArticle);
     return Success.CREATED("Successfully Created Article.", data);

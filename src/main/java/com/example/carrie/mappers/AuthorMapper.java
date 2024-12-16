@@ -4,7 +4,6 @@ import com.example.carrie.entities.Author;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @Mapper
 public interface AuthorMapper {
@@ -16,7 +15,7 @@ public interface AuthorMapper {
     Author findById(@Param("id") String id);
 
     @Select("SELECT * FROM authors WHERE email = #{email}")
-    Optional<Author> findByEmail(@Param("email") String email);
+    Author findByEmail(@Param("email") String email);
 
     @Select("INSERT INTO authors (name, email, dob, gender) VALUES (#{name}, #{email}, #{dob}, #{gender}) RETURNING *")
     Author addAuthor(Author author);

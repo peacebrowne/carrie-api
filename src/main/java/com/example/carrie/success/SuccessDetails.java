@@ -7,18 +7,16 @@ public class SuccessDetails {
     private List<?> data;
     private int status;
 
-
-    public SuccessDetails(String message,int status, List<?> data){
+    public SuccessDetails(String message, int status, List<?> data) {
         this.message = message;
         this.data = data;
         this.status = status;
     }
 
-    public SuccessDetails(String message, int status){
+    public SuccessDetails(String message, int status) {
         this.message = message;
         this.status = status;
     }
-
 
     public String getMessage() {
         return message;
