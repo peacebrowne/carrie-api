@@ -24,6 +24,7 @@ public class Author {
 
     @DateTimeFormat(pattern = "yyyy-mm-dd")
     @Past(message = "Date of birth must be in the past!")
+
     private LocalDate dob;
 
     private String gender;

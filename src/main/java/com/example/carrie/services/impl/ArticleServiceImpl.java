@@ -7,6 +7,8 @@ import com.example.carrie.mappers.ArticleMapper;
 import com.example.carrie.mappers.AuthorMapper;
 import com.example.carrie.services.ArticleService;
 import com.example.carrie.utils.UUIDValidator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,10 +63,19 @@ public class ArticleServiceImpl implements ArticleService {
   }
 
   @Override
-  public List<Article> getAllArticles(String sort, Long limit, Long start) {
+  public List<?> getAllArticles(String sort, Long limit, Long start) {
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
 
     try {
-      return articleMapper.findAll(sort, limit, start);
+
+      Long total = articleMapper.totalArticles(sort, null);
+      List<Article> articles = articleMapper.findAll(sort, limit, start);
+
+      CustomData customData = new CustomData(total, articles);
+
+      return List.of(customData);
 
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -87,8 +98,6 @@ public class ArticleServiceImpl implements ArticleService {
 
       Optional.ofNullable(existingArticles).ifPresent((articles) -> articles.forEach((a) -> {
 
-        log.info("\n\nTESTING \n\n");
-
         if (Objects.equals(a.getAuthorId(), article.getAuthorId()) &&
             Objects.equals(a.getTitle(), article.getTitle())) {
           throw new BadRequest("An Article with this title already exist for this Author!");
@@ -109,7 +118,7 @@ public class ArticleServiceImpl implements ArticleService {
   }
 
   @Override
-  public List<Article> getAuthorsArticles(String authorId) {
+  public List<?> getAuthorsArticles(String authorId, String sort, Long limit, Long start) {
 
     try {
 
@@ -118,7 +127,14 @@ public class ArticleServiceImpl implements ArticleService {
       if (author.isEmpty()) {
         throw new NotFound("Author does not exist!");
       }
-      return articleMapper.findAuthorsArticles(authorId);
+
+      Long total = articleMapper.totalArticles(sort, authorId);
+      List<Article> articles = articleMapper.findAuthorsArticles(authorId, sort, limit, start);
+
+      CustomData customData = new CustomData(total, articles);
+
+      return List.of(customData);
+
     } catch (NotFound e) {
       log.error("Not Found: {}", e.getMessage(), e);
       throw e;
@@ -133,6 +149,7 @@ public class ArticleServiceImpl implements ArticleService {
 
   @Override
   public Article editArticle(Article article, String id) {
+
     try {
       Article existingArticle = getArticleById(id);
 

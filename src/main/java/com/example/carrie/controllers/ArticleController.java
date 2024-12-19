@@ -29,7 +29,7 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    List<Article> articles = articleServiceImpl.getAllArticles(sort, limit, start);
+    List<?> articles = articleServiceImpl.getAllArticles(sort, limit, start);
     return Success.OK("Successfully Retrieved all Articles.", articles);
   }
 
@@ -42,8 +42,11 @@ public class ArticleController {
   }
 
   @GetMapping("/{id}/authors")
-  public ResponseEntity<?> authorArticles(@PathVariable String id) {
-    List<Article> authorArticles = articleServiceImpl.getAuthorsArticles(id);
+  public ResponseEntity<?> authorArticles(@PathVariable String id,
+      @RequestParam(required = false, defaultValue = "created_at") String sort,
+      @RequestParam(required = false, defaultValue = "10") Long limit,
+      @RequestParam(required = false, defaultValue = "0") Long start) {
+    List<?> authorArticles = articleServiceImpl.getAuthorsArticles(id, sort, limit, start);
     return Success.OK("Successfully Retrieved Author's Articles.", authorArticles);
   };
 

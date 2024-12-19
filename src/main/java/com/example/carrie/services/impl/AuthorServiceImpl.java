@@ -13,6 +13,7 @@ import com.example.carrie.utils.UUIDValidator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;

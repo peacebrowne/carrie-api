@@ -7,11 +7,11 @@ import com.example.carrie.entities.Article;
 public interface ArticleService {
   public Article getArticleById(String id);
 
-  public List<Article> getAllArticles(String sort, Long limit, Long start);
+  public List<?> getAllArticles(String sort, Long limit, Long start);
 
   public Article addArticle(Article article);
 
-  public List<Article> getAuthorsArticles(String authorId);
+  public List<?> getAuthorsArticles(String authorId, String sort, Long limit, Long start);
 
   public Article editArticle(Article article, String id);
 
