@@ -151,6 +151,7 @@ public class AuthorServiceImpl implements AuthorService {
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError("An unexpected error occurred while deleting the author.");
         }
+
     }
 
 }
