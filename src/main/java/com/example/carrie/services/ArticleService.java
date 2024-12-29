@@ -1,7 +1,5 @@
 package com.example.carrie.services;
 
-import java.util.List;
-
 import com.example.carrie.entities.Article;
 import com.example.carrie.entities.CustomData;
 
