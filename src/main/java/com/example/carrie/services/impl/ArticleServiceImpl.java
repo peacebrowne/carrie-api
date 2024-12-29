@@ -16,27 +16,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.carrie.entities.Article;
-import com.example.carrie.entities.ArticleTag;
 import com.example.carrie.entities.Author;
+import com.example.carrie.entities.CustomData;
 import com.example.carrie.entities.Tag;
 
-import java.sql.Date;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class ArticleServiceImpl implements ArticleService {
+public class ArticleServiceImpl extends TagServiceImpl implements ArticleService {
   private final ArticleMapper articleMapper;
   private final AuthorMapper authorMapper;
-  private final TagMapper tagMapper;
-  private final ArticleTagMapper articleTagMapper;
   private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
 
   public ArticleServiceImpl(
@@ -44,10 +37,9 @@ public class ArticleServiceImpl implements ArticleService {
       AuthorMapper authorMapper,
       TagMapper tagMapper,
       ArticleTagMapper articleTagMapper) {
+    super(tagMapper, articleTagMapper);
     this.articleMapper = articleMapper;
     this.authorMapper = authorMapper;
-    this.tagMapper = tagMapper;
-    this.articleTagMapper = articleTagMapper;
   }
 
   @Override
@@ -86,7 +78,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     try {
 
-      Long total = articleMapper.totalArticles(sort, null);
+      Long total = articleMapper.totalArticles(null, null, sort);
       List<Article> articles = articleMapper.findAll(sort, limit, start);
 
       // Add related tags to articles
@@ -167,7 +159,7 @@ public class ArticleServiceImpl implements ArticleService {
         throw new NotFound("Author does not exist!");
       }
 
-      Long total = articleMapper.totalArticles(sort, authorID);
+      Long total = articleMapper.totalArticles(null, authorID, sort);
       List<Article> articles = articleMapper.findAuthorsArticles(authorID, sort, limit, start);
 
       // Add related tags to articles
@@ -244,92 +236,37 @@ public class ArticleServiceImpl implements ArticleService {
     }
   }
 
-  private List<Tag> addTags(List<String> tagNames) {
-
+  @Override
+  public CustomData searchArticles(String term, String authorID, String sort, Long limit, Long start) {
     try {
-      ArrayList<Tag> tags = new ArrayList<>();
-
-      for (String name : tagNames) {
-
-        Optional<Tag> existingTag = Optional.ofNullable(tagMapper.getByName(name));
-        Tag newTag = new Tag();
-        newTag.setName(name);
-
-        tags.add(existingTag.isEmpty() ? tagMapper.addTags(newTag) : existingTag.get());
-
+      if (authorID != null && !UUIDValidator.isValidUUID(authorID)) {
+        throw new BadRequest("Invalid Author ID");
       }
 
-      return tags;
+      Long total = articleMapper.totalArticles(term, authorID, sort);
 
-    } catch (Exception e) {
-      log.error("Internal Server Error: {}", e.getMessage(), e);
-      throw new InternalServerError(
-          "An unexpected error occurred while adding a Tag.");
+      List<Article> articles = articleMapper.search(term, authorID, sort, limit, start);
 
-    }
-
-  }
-
-  private void addArticleTags(List<Tag> tags, String articleID) {
-    try {
-      tags.forEach(tag -> {
-        ArticleTag articleTag = new ArticleTag();
-        articleTag.setArticleID(articleID);
-        articleTag.setTagID(tag.getId());
-        articleTagMapper.addArticleTag(articleTag);
+      // Add related tags to articles
+      articles.forEach(article -> {
+        List<String> tags = getArticleTags(article.getId());
+        article.setTags(tags);
       });
+
+      CustomData data = new CustomData(total, articles);
+
+      return data;
+
+    } catch (BadRequest e) {
+      log.error("Bad Request: {}", e.getMessage(), e);
+      throw e;
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
-          "An unexpected error occurred while editing an Article.");
+          "An unexpected error occurred while searching for an Article.");
 
     }
-  }
-
-  private List<String> getArticleTags(String articleID) {
-    try {
-
-      return articleTagMapper.getArticleTags(articleID).stream().map(tag -> {
-        return tag.getName();
-      }).collect(Collectors.toList());
-
-    } catch (Exception e) {
-      log.error("Internal Server Error: {}", e.getMessage(), e);
-      throw new InternalServerError(
-          "An unexpected error occurred while fetching the Articles Tags.");
-
-    }
-  }
-
-  private List<String> editArticleTags(String articleID, List<String> tags) {
-
-    Optional<List<String>> tagsToUpdate = Optional.ofNullable(tags);
-
-    if (tagsToUpdate.isPresent()) {
-      List<Tag> updatedTags = this.addTags(tagsToUpdate.get());
-
-      deleteArticleTag(articleID);
-      this.addArticleTags(updatedTags, articleID);
-
-      return tagsToUpdate.get();
-
-    }
-    return tags;
 
   }
-
-  // TODO Delete article tags
-  private void deleteArticleTag(String articleID) {
-    try {
-      articleTagMapper.deleteArticleTag(articleID);
-    } catch (Exception e) {
-      log.error("Internal Server Error: {}", e.getMessage(), e);
-      throw new InternalServerError(
-          "An unexpected error occurred while deleting an Article Tag.");
-
-    }
-  }
-
-  // TODO Search article by tags
 
 }

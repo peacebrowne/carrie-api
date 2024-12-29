@@ -11,9 +11,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.carrie.entities.Article;
+import com.example.carrie.entities.CustomData;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.services.impl.ArticleServiceImpl;
-import com.example.carrie.services.impl.CustomData;
 
 @RestController
 @RequestMapping("/api/articles")
@@ -27,30 +27,54 @@ public class ArticleController {
 
   @GetMapping
   public ResponseEntity<?> getAllArticles(
-      @RequestParam(required = false, defaultValue = "updated_at") String sort,
+      @RequestParam(required = false) String sort,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomData articles = articleServiceImpl.getAllArticles(sort, limit, start);
-    return Success.OK("Successfully Retrieved all Articles.", articles);
+    CustomData data = articleServiceImpl.getAllArticles(sort, limit, start);
+    return Success.OK("Successfully Retrieved all Articles.", data);
   }
 
   @GetMapping("/{id}")
   public ResponseEntity<?> findArticleById(@PathVariable String id) {
 
-    Article article = articleServiceImpl.getArticleById(id);
-    List<Article> data = List.of(article);
+    List<Article> data = List.of(articleServiceImpl.getArticleById(id));
     return Success.OK("Successfully Retrieved single Article.", data);
   }
 
   @GetMapping("/{id}/authors")
   public ResponseEntity<?> authorArticles(@PathVariable String id,
-      @RequestParam(required = false, defaultValue = "updated_at") String sort,
+      @RequestParam(required = false) String sort,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomData authorArticles = articleServiceImpl.getAuthorsArticles(id, sort, limit, start);
-    return Success.OK("Successfully Retrieved Author's Articles.", authorArticles);
+    CustomData data = articleServiceImpl.getAuthorsArticles(id, sort, limit, start);
+
+    return Success.OK("Successfully Retrieved Author's Articles.", data);
+  };
+
+  @GetMapping("/authors/{id}/search")
+  public ResponseEntity<?> searchAuthorArticles(@PathVariable String id,
+      @RequestParam String term,
+      @RequestParam(required = false) String sort,
+      @RequestParam(required = false, defaultValue = "10") Long limit,
+      @RequestParam(required = false, defaultValue = "0") Long start) {
+
+    CustomData data = articleServiceImpl.searchArticles(term, id, sort, limit, start);
+
+    return Success.OK("Successfully Retrieved Author's Articles.", data);
+  };
+
+  @GetMapping("/search")
+  public ResponseEntity<?> searchArticles(
+      @RequestParam String term,
+      @RequestParam(required = false) String sort,
+      @RequestParam(required = false, defaultValue = "10") Long limit,
+      @RequestParam(required = false, defaultValue = "0") Long start) {
+
+    CustomData data = articleServiceImpl.searchArticles(term, null, sort, limit, start);
+
+    return Success.OK("Successfully Retrieved Author's Articles.", data);
   };
 
   @PostMapping

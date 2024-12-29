@@ -15,32 +15,122 @@ public interface ArticleMapper {
         @Select("SELECT * FROM articles WHERE id = #{id}::uuid")
         Article findById(@Param("id") String id);
 
-        @Select("SELECT * FROM articles ORDER BY #{sort} DESC LIMIT #{limit} OFFSET #{start}")
+        @Select("<script> " +
+                        "SELECT * FROM articles a " +
+                        "<choose> " +
+                        "    <when test='sort == \"title\"'> " +
+                        "      ORDER BY a.title " +
+                        "    </when> " +
+                        "    <when test='sort == \"updated_at\"'> " +
+                        "      ORDER BY a.updated_at DESC " +
+                        "    </when> " +
+                        "    <otherwise> " +
+                        "      ORDER BY a.created_at DESC " +
+                        "    </otherwise> " +
+                        "</choose>  " +
+                        "LIMIT #{limit} OFFSET #{start}" +
+                        "</script>"
+
+        )
         List<Article> findAll(@Param("sort") String sort, @Param("limit") Long limit, @Param("start") Long start);
 
-        @Select("<script>" +
-                        "SELECT COUNT(*) AS total FROM (SELECT * FROM articles" +
-                        "  <where>" +
-                        "    <if test='authorID != null and authorID != \"\"'>" +
-                        "      authorID = #{authorID}::uuid" +
-                        "    </if>" +
-                        "  </where>" +
-                        "  ORDER BY #{sort}" +
-                        ")" +
+        @Select("<script> " +
+                        "SELECT COUNT(*) AS total FROM ( " +
+                        "  SELECT DISTINCT a.* " +
+                        "  FROM articles a " +
+                        "  <if test='term != null and term != \"\"'>" +
+                        "    LEFT JOIN article_tags at ON a.id = at.articleID " +
+                        "    LEFT JOIN tags t ON at.tagID = t.id " +
+                        "  </if>" +
+                        "  <where> " +
+                        "    <choose> " +
+                        "      <when test='term != null and term != \"\"'> " +
+                        "        (a.title ILIKE CONCAT('%', #{term}, '%') " +
+                        "        OR a.content ILIKE CONCAT('%', #{term}, '%') " +
+                        "        OR a.description ILIKE CONCAT('%', #{term}, '%') " +
+                        "        OR t.name ILIKE CONCAT('%', #{term}, '%')) " +
+                        "      </when> " +
+                        "      <when test='authorID != null and authorID != \"\"'> " +
+                        "        a.authorID = #{authorID}::uuid " +
+                        "      </when> " +
+                        "    </choose> " +
+                        "  </where> " +
+                        "  <choose> " +
+                        "    <when test='sort == \"title\"'> " +
+                        "      ORDER BY a.title " +
+                        "    </when> " +
+                        "    <when test='sort == \"updated_at\"'> " +
+                        "      ORDER BY a.updated_at DESC " +
+                        "    </when> " +
+                        "    <otherwise> " +
+                        "      ORDER BY a.created_at DESC " +
+                        "    </otherwise> " +
+                        "  </choose> )" +
                         "</script>")
-        Long totalArticles(@Param("sort") String sort, @Param("authorID") String authorID);
 
-        @Select("SELECT * FROM articles WHERE authorID =#{authorID}::uuid ORDER BY #{sort} DESC LIMIT #{limit} OFFSET #{start}")
+        Long totalArticles(@Param("term") String term, @Param("authorID") String authorID, @Param("sort") String sort);
+
+        @Select("<script> " +
+                        "SELECT * FROM articles a " +
+                        "   <where test='authorID != null and authorID != \"\"'> " +
+                        "        a.authorID = #{authorID}::uuid " +
+                        "   </where> " +
+                        "   <choose> " +
+                        "    <when test='sort == \"title\"'> " +
+                        "      ORDER BY a.title " +
+                        "    </when> " +
+                        "    <when test='sort == \"updated_at\"'> " +
+                        "      ORDER BY a.updated_at DESC " +
+                        "    </when> " +
+                        "    <otherwise> " +
+                        "      ORDER BY a.created_at DESC " +
+                        "    </otherwise> " +
+                        "</choose>  " +
+                        "LIMIT #{limit} OFFSET #{start}" +
+                        "</script>"
+
+        )
         List<Article> findAuthorsArticles(@Param("authorID") String authorID, @Param("sort") String sort,
                         @Param("limit") Long limit, @Param("start") Long start);
 
         @Select("INSERT INTO articles (title, authorID, content, is_published, description) VALUES (#{title}, #{authorID}::uuid, #{content}, #{is_published}, #{description}) RETURNING *")
         Article addArticle(Article article);
 
+        @Select("<script> " +
+                        "SELECT DISTINCT a.* " +
+                        "FROM articles a " +
+                        "LEFT JOIN article_tags at ON a.id = at.articleID " +
+                        "LEFT JOIN tags t ON at.tagID = t.id " +
+                        "<where> " +
+                        "  (a.title ILIKE CONCAT('%', #{term}, '%') " +
+                        "  OR a.content ILIKE CONCAT('%', #{term}, '%') " +
+                        "  OR a.description ILIKE CONCAT('%', #{term}, '%') " +
+                        "  OR t.name ILIKE CONCAT('%', #{term}, '%')) " +
+                        "  <if test='authorID != null and authorID != \"\"'> " +
+                        "    AND a.authorID = #{authorID}::uuid " +
+                        "  </if> " +
+                        "</where> " +
+                        "<choose> " +
+                        "  <when test='sort == \"title\"'> " +
+                        "    ORDER BY a.title " +
+                        "  </when> " +
+                        "  <when test='sort == \"updated_at\"'> " +
+                        "    ORDER BY a.updated_at DESC " +
+                        "  </when> " +
+                        "  <otherwise> " +
+                        "    ORDER BY a.updated_at DESC " +
+                        "  </otherwise> " +
+                        "</choose> " +
+                        "LIMIT #{limit} OFFSET #{start}" +
+                        "</script>")
+
+        List<Article> search(@Param("term") String term, @Param("authorID") String authorID, @Param("sort") String sort,
+                        @Param("limit") Long limit, @Param("start") Long start);
+
         @Insert("UPDATE articles SET title = #{title}, content = #{content}, is_published = #{is_published}, description = #{description}, updated_at = #{updated_at} WHERE id = #{id}::uuid")
         void editArticle(Article article);
 
         @Delete("DELETE FROM articles WHERE id = #{id}::uuid")
-        Article deleteArticle(@Param("id") String id);
+        void deleteArticle(@Param("id") String id);
 
 }
