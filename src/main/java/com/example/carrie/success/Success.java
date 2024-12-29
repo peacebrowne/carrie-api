@@ -4,29 +4,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 public class Success {
-    static public ResponseEntity<?> CREATED(String message, List<?> data) {
+    static public <T> ResponseEntity<?> CREATED(String message, T data) {
 
         HttpStatus status = HttpStatus.CREATED;
 
-        List<?> safeData = data == null ? List.of() : data;
+        Optional<T> safeData = Optional.ofNullable(data);
 
-        SuccessDetails successDetails = safeData.isEmpty() ? new SuccessDetails(message, status.value())
-                : new SuccessDetails(message, status.value(), data);
+        SuccessDetails<T> successDetails = safeData.isEmpty() ? new SuccessDetails<>(message, status.value())
+                : new SuccessDetails<>(message, status.value(), data);
 
         return new ResponseEntity<>(successDetails, status);
 
     }
 
-    static public ResponseEntity<?> OK(String message, List<?> data) {
+    static public <T> ResponseEntity<?> OK(String message, T data) {
 
         HttpStatus status = HttpStatus.OK;
 
-        List<?> safeData = data == null ? List.of() : data;
+        Optional<T> safeData = Optional.ofNullable(data);
 
-        SuccessDetails successDetails = safeData.isEmpty() ? new SuccessDetails(message, status.value())
-                : new SuccessDetails(message, status.value(), data);
+        SuccessDetails<T> successDetails = safeData.isEmpty() ? new SuccessDetails<>(message, status.value())
+                : new SuccessDetails<>(message, status.value(), data);
 
         return new ResponseEntity<>(successDetails, status);
 

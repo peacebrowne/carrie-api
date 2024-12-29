@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.*;
 import com.example.carrie.entities.Article;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.services.impl.ArticleServiceImpl;
+import com.example.carrie.services.impl.CustomData;
 
 @RestController
 @RequestMapping("/api/articles")
 public class ArticleController {
+
   private final ArticleServiceImpl articleServiceImpl;
 
   public ArticleController(ArticleServiceImpl articleServiceImpl) {
@@ -25,11 +27,11 @@ public class ArticleController {
 
   @GetMapping
   public ResponseEntity<?> getAllArticles(
-      @RequestParam(required = false, defaultValue = "created_at") String sort,
+      @RequestParam(required = false, defaultValue = "updated_at") String sort,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    List<?> articles = articleServiceImpl.getAllArticles(sort, limit, start);
+    CustomData articles = articleServiceImpl.getAllArticles(sort, limit, start);
     return Success.OK("Successfully Retrieved all Articles.", articles);
   }
 
@@ -43,10 +45,11 @@ public class ArticleController {
 
   @GetMapping("/{id}/authors")
   public ResponseEntity<?> authorArticles(@PathVariable String id,
-      @RequestParam(required = false, defaultValue = "created_at") String sort,
+      @RequestParam(required = false, defaultValue = "updated_at") String sort,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
-    List<?> authorArticles = articleServiceImpl.getAuthorsArticles(id, sort, limit, start);
+
+    CustomData authorArticles = articleServiceImpl.getAuthorsArticles(id, sort, limit, start);
     return Success.OK("Successfully Retrieved Author's Articles.", authorArticles);
   };
 

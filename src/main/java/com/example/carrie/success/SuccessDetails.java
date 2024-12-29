@@ -1,13 +1,11 @@
 package com.example.carrie.success;
 
-import java.util.List;
-
-public class SuccessDetails {
+public class SuccessDetails<T> {
     private String message;
-    private List<?> data;
+    private T data;
     private int status;
 
-    public SuccessDetails(String message, int status, List<?> data) {
+    public SuccessDetails(String message, int status, T data) {
         this.message = message;
         this.data = data;
         this.status = status;
@@ -30,7 +28,7 @@ public class SuccessDetails {
         return data;
     }
 
-    public void setData(List<?> data) {
+    public void setData(T data) {
         this.data = data;
     }
 

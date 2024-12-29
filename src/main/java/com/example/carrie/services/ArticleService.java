@@ -1,17 +1,16 @@
 package com.example.carrie.services;
 
-import java.util.List;
-
 import com.example.carrie.entities.Article;
+import com.example.carrie.services.impl.CustomData;
 
 public interface ArticleService {
   public Article getArticleById(String id);
 
-  public List<?> getAllArticles(String sort, Long limit, Long start);
+  public CustomData getAllArticles(String sort, Long limit, Long start);
 
   public Article addArticle(Article article);
 
-  public List<?> getAuthorsArticles(String authorId, String sort, Long limit, Long start);
+  public CustomData getAuthorsArticles(String authorID, String sort, Long limit, Long start);
 
   public Article editArticle(Article article, String id);
 

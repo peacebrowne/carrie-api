@@ -51,7 +51,7 @@ public class AuthorServiceImpl implements AuthorService {
         } catch (Exception e) {
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
-                    "An unexpected error occured while fetching the author.");
+                    "An unexpected error occurred while fetching the author.");
         }
     }
 
@@ -63,7 +63,7 @@ public class AuthorServiceImpl implements AuthorService {
         } catch (Exception e) {
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
-                    "An unexpected error occured while fetching authors.");
+                    "An unexpected error occurred while fetching authors.");
         }
 
     }
@@ -91,7 +91,7 @@ public class AuthorServiceImpl implements AuthorService {
         } catch (Exception e) {
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
-                    "An unexpected error occured while adding the author.");
+                    "An unexpected error occurred while adding the author.");
 
         }
     }
@@ -132,7 +132,7 @@ public class AuthorServiceImpl implements AuthorService {
         } catch (Exception e) {
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
-                    "An unexpected error occured while editing the author.");
+                    "An unexpected error occurred while editing the author.");
         }
     }
 
