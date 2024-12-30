@@ -17,6 +17,9 @@ public interface ArticleMapper {
 
         @Select("<script> " +
                         "SELECT * FROM articles a " +
+                        "<if test='published != null and published != \"\"'>" +
+                        "  WHERE a.is_published = #{published}" +
+                        "</if>" +
                         "<choose> " +
                         "    <when test='sort == \"title\"'> " +
                         "      ORDER BY a.title " +
@@ -32,7 +35,8 @@ public interface ArticleMapper {
                         "</script>"
 
         )
-        List<Article> findAll(@Param("sort") String sort, @Param("limit") Long limit, @Param("start") Long start);
+        List<Article> findAll(@Param("sort") String sort, @Param("limit") Long limit, @Param("start") Long start,
+                        @Param("published") Boolean published);
 
         @Select("<script> " +
                         "SELECT COUNT(*) AS total FROM ( " +
@@ -49,9 +53,18 @@ public interface ArticleMapper {
                         "        OR a.content ILIKE CONCAT('%', #{term}, '%') " +
                         "        OR a.description ILIKE CONCAT('%', #{term}, '%') " +
                         "        OR t.name ILIKE CONCAT('%', #{term}, '%')) " +
+                        "        <if test='authorID != null and authorID != \"\"'>" +
+                        "           AND  a.authorID = #{authorID}::uuid" +
+                        "       </if>" +
                         "      </when> " +
                         "      <when test='authorID != null and authorID != \"\"'> " +
                         "        a.authorID = #{authorID}::uuid " +
+                        "        <if test='published != null'>" +
+                        "           AND  a.is_published = #{published} " +
+                        "       </if>" +
+                        "      </when> " +
+                        "      <when test='published != null'> " +
+                        "        a.is_published = #{published} " +
                         "      </when> " +
                         "    </choose> " +
                         "  </where> " +
@@ -68,12 +81,16 @@ public interface ArticleMapper {
                         "  </choose> )" +
                         "</script>")
 
-        Long totalArticles(@Param("term") String term, @Param("authorID") String authorID, @Param("sort") String sort);
+        Long totalArticles(@Param("term") String term, @Param("authorID") String authorID, @Param("sort") String sort,
+                        @Param("published") Boolean published);
 
         @Select("<script> " +
                         "SELECT * FROM articles a " +
-                        "   <where test='authorID != null and authorID != \"\"'> " +
+                        "   <where> " +
                         "        a.authorID = #{authorID}::uuid " +
+                        "      <if test='published != null'> " +
+                        "         AND  a.is_published = #{published}" +
+                        "      </if>  " +
                         "   </where> " +
                         "   <choose> " +
                         "    <when test='sort == \"title\"'> " +
@@ -91,7 +108,7 @@ public interface ArticleMapper {
 
         )
         List<Article> findAuthorsArticles(@Param("authorID") String authorID, @Param("sort") String sort,
-                        @Param("limit") Long limit, @Param("start") Long start);
+                        @Param("limit") Long limit, @Param("start") Long start, @Param("published") Boolean published);
 
         @Select("INSERT INTO articles (title, authorID, content, is_published, description) VALUES (#{title}, #{authorID}::uuid, #{content}, #{is_published}, #{description}) RETURNING *")
         Article addArticle(Article article);

@@ -74,12 +74,12 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
   }
 
   @Override
-  public CustomData getAllArticles(String sort, Long limit, Long start) {
+  public CustomData getAllArticles(String sort, Long limit, Long start, Boolean published) {
 
     try {
 
-      Long total = articleMapper.totalArticles(null, null, sort);
-      List<Article> articles = articleMapper.findAll(sort, limit, start);
+      Long total = articleMapper.totalArticles(null, null, sort, published);
+      List<Article> articles = articleMapper.findAll(sort, limit, start, published);
 
       // Add related tags to articles
       articles.forEach(article -> {
@@ -149,7 +149,7 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
   }
 
   @Override
-  public CustomData getAuthorsArticles(String authorID, String sort, Long limit, Long start) {
+  public CustomData getAuthorsArticles(String authorID, String sort, Long limit, Long start, Boolean published) {
 
     try {
 
@@ -159,8 +159,12 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
         throw new NotFound("Author does not exist!");
       }
 
-      Long total = articleMapper.totalArticles(null, authorID, sort);
-      List<Article> articles = articleMapper.findAuthorsArticles(authorID, sort, limit, start);
+      System.out.println("\n\n");
+      System.out.println("Published: " + published);
+      System.out.println("\n\n");
+
+      Long total = articleMapper.totalArticles(null, authorID, sort, published);
+      List<Article> articles = articleMapper.findAuthorsArticles(authorID, sort, limit, start, published);
 
       // Add related tags to articles
       articles.forEach(article -> {
@@ -243,7 +247,7 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
         throw new BadRequest("Invalid Author ID");
       }
 
-      Long total = articleMapper.totalArticles(term, authorID, sort);
+      Long total = articleMapper.totalArticles(term, authorID, sort, null);
 
       List<Article> articles = articleMapper.search(term, authorID, sort, limit, start);
 

@@ -28,10 +28,11 @@ public class ArticleController {
   @GetMapping
   public ResponseEntity<?> getAllArticles(
       @RequestParam(required = false) String sort,
+      @RequestParam(required = false) Boolean published,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomData data = articleServiceImpl.getAllArticles(sort, limit, start);
+    CustomData data = articleServiceImpl.getAllArticles(sort, limit, start, published);
     return Success.OK("Successfully Retrieved all Articles.", data);
   }
 
@@ -42,13 +43,14 @@ public class ArticleController {
     return Success.OK("Successfully Retrieved single Article.", data);
   }
 
-  @GetMapping("/{id}/authors")
+  @GetMapping("/authors/{id}")
   public ResponseEntity<?> authorArticles(@PathVariable String id,
       @RequestParam(required = false) String sort,
+      @RequestParam(required = false) Boolean published,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomData data = articleServiceImpl.getAuthorsArticles(id, sort, limit, start);
+    CustomData data = articleServiceImpl.getAuthorsArticles(id, sort, limit, start, published);
 
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   };

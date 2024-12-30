@@ -6,11 +6,11 @@ import com.example.carrie.entities.CustomData;
 public interface ArticleService {
   public Article getArticleById(String id);
 
-  public CustomData getAllArticles(String sort, Long limit, Long start);
+  public CustomData getAllArticles(String sort, Long limit, Long start, Boolean published);
 
   public Article addArticle(Article article);
 
-  public CustomData getAuthorsArticles(String authorID, String sort, Long limit, Long start);
+  public CustomData getAuthorsArticles(String authorID, String sort, Long limit, Long start, Boolean published);
 
   public Article editArticle(Article article, String id);
 
