@@ -1,4 +1,4 @@
-package com.example.carrie.utils;
+package com.example.carrie.utils.validations;
 
 public class EmailValidator {
 

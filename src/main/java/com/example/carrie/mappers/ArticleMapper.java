@@ -21,15 +21,15 @@ public interface ArticleMapper {
                         "  WHERE a.is_published = #{published}" +
                         "</if>" +
                         "<choose> " +
-                        "    <when test='sort == \"title\"'> " +
-                        "      ORDER BY a.title " +
-                        "    </when> " +
-                        "    <when test='sort == \"updated_at\"'> " +
-                        "      ORDER BY a.updated_at DESC " +
-                        "    </when> " +
-                        "    <otherwise> " +
-                        "      ORDER BY a.created_at DESC " +
-                        "    </otherwise> " +
+                        "  <when test='sort == \"title\"'> " +
+                        "    ORDER BY a.title " +
+                        "  </when> " +
+                        "  <when test='sort == \"updated_at\"'> " +
+                        "    ORDER BY a.updated_at DESC " +
+                        "  </when> " +
+                        "  <otherwise> " +
+                        "    ORDER BY a.created_at DESC " +
+                        "  </otherwise> " +
                         "</choose>  " +
                         "LIMIT #{limit} OFFSET #{start}" +
                         "</script>"
@@ -68,17 +68,7 @@ public interface ArticleMapper {
                         "      </when> " +
                         "    </choose> " +
                         "  </where> " +
-                        "  <choose> " +
-                        "    <when test='sort == \"title\"'> " +
-                        "      ORDER BY a.title " +
-                        "    </when> " +
-                        "    <when test='sort == \"updated_at\"'> " +
-                        "      ORDER BY a.updated_at DESC " +
-                        "    </when> " +
-                        "    <otherwise> " +
-                        "      ORDER BY a.created_at DESC " +
-                        "    </otherwise> " +
-                        "  </choose> )" +
+                        " )" +
                         "</script>")
 
         Long totalArticles(@Param("term") String term, @Param("authorID") String authorID, @Param("sort") String sort,
@@ -144,7 +134,7 @@ public interface ArticleMapper {
         List<Article> search(@Param("term") String term, @Param("authorID") String authorID, @Param("sort") String sort,
                         @Param("limit") Long limit, @Param("start") Long start);
 
-        @Insert("UPDATE articles SET title = #{title}, content = #{content}, is_published = #{is_published}, description = #{description}, updated_at = #{updated_at} WHERE id = #{id}::uuid")
+        @Update("UPDATE articles SET title = #{title}, content = #{content}, is_published = #{is_published}, description = #{description}, updated_at = #{updated_at} WHERE id = #{id}::uuid")
         void editArticle(Article article);
 
         @Delete("DELETE FROM articles WHERE id = #{id}::uuid")

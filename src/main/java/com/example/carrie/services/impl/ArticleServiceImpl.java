@@ -7,8 +7,9 @@ import com.example.carrie.mappers.ArticleMapper;
 import com.example.carrie.mappers.ArticleTagMapper;
 import com.example.carrie.mappers.AuthorMapper;
 import com.example.carrie.mappers.TagMapper;
+import com.example.carrie.models.CustomData;
 import com.example.carrie.services.ArticleService;
-import com.example.carrie.utils.UUIDValidator;
+import com.example.carrie.utils.validations.UUIDValidator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.carrie.entities.Article;
 import com.example.carrie.entities.Author;
-import com.example.carrie.entities.CustomData;
 import com.example.carrie.entities.Tag;
 
 import java.time.LocalDateTime;
@@ -46,15 +46,13 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
   public Article getArticleById(String id) {
 
     try {
-      if (!UUIDValidator.isValidUUID(id)) {
+      if (!UUIDValidator.isValidUUID(id))
         throw new BadRequest("Invalid article ID");
-      }
 
       Optional<Article> article = Optional.ofNullable(articleMapper.findById(id));
 
-      if (article.isEmpty()) {
+      if (article.isEmpty())
         throw new NotFound("Article with this id '" + id + "' does not exist!");
-      }
 
       List<String> articleTags = getArticleTags(id);
       article.get().setTags(articleTags);
@@ -110,23 +108,21 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
 
       List<Article> existingArticles = articleMapper.findByTitle(title);
 
-      if (!UUIDValidator.isValidUUID(article.getAuthorID())) {
+      if (!UUIDValidator.isValidUUID(article.getAuthorID()))
         throw new BadRequest("Invalid author ID");
-      }
 
       Optional<Author> author = Optional.ofNullable(authorMapper.findById(article.getAuthorID()));
 
-      if (author.isEmpty()) {
+      if (author.isEmpty())
         throw new NotFound("Author does not exist!");
-      }
 
       // Checks if an article with given Title and Author already exist.
       Optional.ofNullable(existingArticles).ifPresent((articles) -> articles.forEach((a) -> {
 
         if (Objects.equals(a.getAuthorID(), article.getAuthorID()) &&
-            Objects.equals(a.getTitle(), article.getTitle())) {
+            Objects.equals(a.getTitle(), article.getTitle()))
           throw new BadRequest("An Article with this title already exist for this Author!");
-        }
+
       }));
 
       Article createdArticle = articleMapper.addArticle(article);
@@ -155,13 +151,8 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
 
       Optional<Author> author = Optional.ofNullable(authorMapper.findById(authorID));
 
-      if (author.isEmpty()) {
+      if (author.isEmpty())
         throw new NotFound("Author does not exist!");
-      }
-
-      System.out.println("\n\n");
-      System.out.println("Published: " + published);
-      System.out.println("\n\n");
 
       Long total = articleMapper.totalArticles(null, authorID, sort, published);
       List<Article> articles = articleMapper.findAuthorsArticles(authorID, sort, limit, start, published);
@@ -236,16 +227,15 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
       throw e;
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
-      throw new InternalServerError("An unexpected error occurred while deleting the author.");
+      throw new InternalServerError("An unexpected error occurred while deleting the Article.");
     }
   }
 
   @Override
   public CustomData searchArticles(String term, String authorID, String sort, Long limit, Long start) {
     try {
-      if (authorID != null && !UUIDValidator.isValidUUID(authorID)) {
+      if (authorID != null && !UUIDValidator.isValidUUID(authorID))
         throw new BadRequest("Invalid Author ID");
-      }
 
       Long total = articleMapper.totalArticles(term, authorID, sort, null);
 

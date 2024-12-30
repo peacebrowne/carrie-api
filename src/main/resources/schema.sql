@@ -8,12 +8,13 @@ CREATE TABLE IF NOT EXISTS authors (
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
     first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
+    last_name TEXT,
     dob DATE,
     gender TEXT,
     password_hash TEXT,
     password_salt TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 );
 
 -- Create the articles table
@@ -35,8 +36,12 @@ CREATE TABLE IF NOT EXISTS articles (
 CREATE TABLE IF NOT EXISTS comments(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     articleID UUID NOT NULL,
+    authorID UUID NOT NULL,
     content TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE
+    FOREIGN KEY(authorID) REFERENCES authorID(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tags (

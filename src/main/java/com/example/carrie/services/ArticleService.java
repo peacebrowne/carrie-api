@@ -1,7 +1,7 @@
 package com.example.carrie.services;
 
 import com.example.carrie.entities.Article;
-import com.example.carrie.entities.CustomData;
+import com.example.carrie.models.CustomData;
 
 public interface ArticleService {
   public Article getArticleById(String id);

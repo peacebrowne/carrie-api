@@ -7,8 +7,8 @@ import com.example.carrie.errors.custom.NotFound;
 
 import com.example.carrie.mappers.AuthorMapper;
 import com.example.carrie.services.AuthorService;
-import com.example.carrie.utils.EmailValidator;
-import com.example.carrie.utils.UUIDValidator;
+import com.example.carrie.utils.validations.EmailValidator;
+import com.example.carrie.utils.validations.UUIDValidator;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,15 +34,13 @@ public class AuthorServiceImpl implements AuthorService {
     public Author getAuthorById(String id) {
         try {
 
-            if (!UUIDValidator.isValidUUID(id)) {
+            if (!UUIDValidator.isValidUUID(id)) 
                 throw new BadRequest("Invalid author ID!");
-            }
 
             Optional<Author> author = Optional.ofNullable(authorMapper.findById(id));
 
-            if (author.isEmpty()) {
+            if (author.isEmpty()) 
                 throw new NotFound("Author with this id '" + id + "' does not exist!");
-            }
 
             return author.get();
         } catch (BadRequest | NotFound e) {
@@ -74,15 +72,13 @@ public class AuthorServiceImpl implements AuthorService {
         try {
             String email = author.getEmail();
 
-            if (!EmailValidator.isValidEmail(email)) {
+            if (!EmailValidator.isValidEmail(email)) 
                 throw new BadRequest("Invalid email address!");
-            }
 
             Optional<Author> authorExist = Optional.ofNullable(authorMapper.findByEmail(email));
 
-            if (authorExist.isPresent()) {
+            if (authorExist.isPresent()) 
                 throw new BadRequest("User with this email '" + email + "' already exist");
-            }
 
             return authorMapper.addAuthor(author);
         } catch (BadRequest e) {
@@ -104,17 +100,15 @@ public class AuthorServiceImpl implements AuthorService {
 
             if (author.getEmail() != null) {
 
-                if (!EmailValidator.isValidEmail(author.getEmail())) {
+                if (!EmailValidator.isValidEmail(author.getEmail())) 
                     throw new BadRequest("Invalid email address!");
-                }
 
                 if (!Objects.equals(author.getEmail(), existingAuthor.getEmail())) {
 
                     Optional<Author> authorOptional = Optional.ofNullable(authorMapper.findByEmail(author.getEmail()));
 
-                    if (authorOptional.isPresent()) {
+                    if (authorOptional.isPresent()) 
                         throw new BadRequest("Email is already taken!");
-                    }
 
                     existingAuthor.setEmail(author.getEmail());
 
@@ -123,7 +117,7 @@ public class AuthorServiceImpl implements AuthorService {
 
             Optional.ofNullable(author.getDob()).ifPresent(dob -> existingAuthor.setDob(dob));
             Optional.ofNullable(author.getGender()).ifPresent(gender -> existingAuthor.setGender(gender));
-            Optional.ofNullable(author.getName()).ifPresent(name -> existingAuthor.setName(name));
+            Optional.ofNullable(author.getUsername()).ifPresent(name -> existingAuthor.setUsername(name));
 
             return authorMapper.editAuthor(existingAuthor);
         } catch (BadRequest | NotFound e) {
