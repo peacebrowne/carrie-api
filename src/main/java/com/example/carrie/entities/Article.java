@@ -39,13 +39,13 @@ public class Article {
    * Local date and time the Article was created.
    * This field records the timestamp when the article was first created.
    */
-  private LocalDateTime created_at;
+  private LocalDateTime createdAt;
 
   /*
    * Local date and time the Article was updated.
    * This field stores the timestamp when the article was last updated.
    */
-  private LocalDateTime updated_at;
+  private LocalDateTime updatedAt;
 
   /*
    * Description of the Article.
@@ -60,7 +60,7 @@ public class Article {
    * Indicates whether the article is published or not.
    * This boolean flag determines if the article is visible to the public or not
    */
-  private Boolean is_published;
+  private Boolean isPublished;
 
   /*
    * List of associated Tags that the Article belongs to.

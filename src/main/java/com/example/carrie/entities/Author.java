@@ -21,7 +21,21 @@ public class Author {
     private String id;
 
     /*
-     * Username of the user who posted the comment.
+     * First name of the author.
+     * This field is required and should not exceed 20 characters.
+     */
+    @NotEmpty(message = "Please provide a first name")
+    @Size(max = 20, message = "Username should not be more than 20 characters")
+    private String firstName;
+
+    /*
+     * Last name of the author.
+     * This field is required and should not exceed 20 characters.
+     */
+    private String lastName;
+
+    /*
+     * Username of the author.
      * This field is required and should not exceed 20 characters.
      */
     @NotEmpty(message = "Please provide a username")
@@ -55,6 +69,6 @@ public class Author {
      * Timestamp when the comment was created.
      * This field stores the date and time when the comment was created.
      */
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
 }

@@ -96,6 +96,11 @@ public class CommentServiceImpl implements CommentService {
       if (!UUIDValidator.isValidUUID(comment.getAuthorID()))
         throw new BadRequest("Invalid Author ID");
 
+      Optional.ofNullable(comment.getParentCommentID()).ifPresent(parentCommentID -> {
+        if (!UUIDValidator.isValidUUID(parentCommentID))
+          throw new BadRequest("Invalid Comment ID");
+      });
+
       Optional<Author> author = Optional.ofNullable(authorMapper.findById(comment.getAuthorID()));
 
       if (author.isEmpty())
@@ -152,7 +157,7 @@ public class CommentServiceImpl implements CommentService {
       Optional.ofNullable(comment.getContent()).ifPresent(content -> existingComment.setContent(content));
 
       LocalDateTime currentDate = LocalDateTime.now();
-      existingComment.setUpdated_at(currentDate);
+      existingComment.setUpdatedAt(currentDate);
 
       commentMapper.editComment(existingComment);
 
@@ -185,6 +190,32 @@ public class CommentServiceImpl implements CommentService {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError("An unexpected error occurred while deleting the Comment.");
     }
+  }
+
+  @Override
+  public CustomData getCommentReplies(String parentCommentID, Long limit, Long start) {
+
+    try {
+
+      getCommentById(parentCommentID);
+
+      Long total = commentMapper.totalComments(parentCommentID);
+      List<Comment> comments = commentMapper.findCommentReplies(parentCommentID, limit, start);
+
+      CustomData data = new CustomData(total, comments);
+
+      return data;
+
+    } catch (NotFound e) {
+      log.error("Not Found: {}", e.getMessage(), e);
+      throw e;
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+          "An unexpected error occurred while fetching an Comment's replies.");
+
+    }
+
   }
 
 }

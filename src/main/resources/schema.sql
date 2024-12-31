@@ -7,14 +7,14 @@ CREATE TABLE IF NOT EXISTS authors (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
-    first_name TEXT NOT NULL,
-    last_name TEXT,
+    firstName TEXT NOT NULL,
+    lastName TEXT,
     dob DATE,
     gender TEXT,
     password_hash TEXT,
     password_salt TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 );
 
 -- Create the articles table
@@ -25,9 +25,9 @@ CREATE TABLE IF NOT EXISTS articles (
     description TEXT,
     content TEXT,
     published_at TIMESTAMP,
-    is_published BOOLEAN DEFAULT false,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isPublished BOOLEAN DEFAULT false,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (authorID) REFERENCES authors(id) ON DELETE CASCADE
     CONSTRAINT unique_author_article UNIQUE (authorID, title)
 );
@@ -37,17 +37,19 @@ CREATE TABLE IF NOT EXISTS comments(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     articleID UUID NOT NULL,
     authorID UUID NOT NULL,
+    parentCommentID UUID;
     content TEXT NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE
     FOREIGN KEY(authorID) REFERENCES authorID(id) ON DELETE CASCADE
+    FOREIGN KEY(parentCommentID) REFERENCES comments(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tags (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS article_tags (
@@ -63,7 +65,7 @@ CREATE TABLE IF NOT EXISTS claps(
     authorID UUID NOT NULL,
     articleID UUID NOT NULL,
     count INTEGER DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(authorID) REFERENCES authors(id) ON DELETE CASCADE,
     FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE
 )

@@ -28,6 +28,12 @@ public class Comment {
   private String authorID;
 
   /*
+   * ID of the comment that is replied to.
+   * This field links the replies to a specific comment by its ID.
+   */
+  private String parentCommentID;
+
+  /*
    * Actual content of the Comment.
    * The content should be at least 5 characters and no more than 100 characters
    * long.
@@ -41,12 +47,12 @@ public class Comment {
    * Local date and time the Comment was created.
    * This field records the timestamp when the comment was first created.
    */
-  private LocalDateTime created_at;
+  private LocalDateTime createdAt;
 
   /*
    * Local date and time the Comment was updated.
    * This field stores the timestamp when the comment was last updated.
    */
-  private LocalDateTime updated_at;
+  private LocalDateTime updatedAt;
 
 }

@@ -33,7 +33,7 @@ public class AuthorController {
 
     @GetMapping
     public ResponseEntity<?> getAllAuthors(
-            @RequestParam(required = false, defaultValue = "created_at") String sort,
+            @RequestParam(required = false, defaultValue = "createdAt") String sort,
             @RequestParam(required = false, defaultValue = "10") Long limit,
             @RequestParam(required = false, defaultValue = "0") Long start) {
 

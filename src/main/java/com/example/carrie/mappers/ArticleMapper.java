@@ -18,17 +18,17 @@ public interface ArticleMapper {
         @Select("<script> " +
                         "SELECT * FROM articles a " +
                         "<if test='published != null and published != \"\"'>" +
-                        "  WHERE a.is_published = #{published}" +
+                        "  WHERE a.isPublished = #{published}" +
                         "</if>" +
                         "<choose> " +
                         "  <when test='sort == \"title\"'> " +
                         "    ORDER BY a.title " +
                         "  </when> " +
-                        "  <when test='sort == \"updated_at\"'> " +
-                        "    ORDER BY a.updated_at DESC " +
+                        "  <when test='sort == \"updatedAt\"'> " +
+                        "    ORDER BY a.updatedAt DESC " +
                         "  </when> " +
                         "  <otherwise> " +
-                        "    ORDER BY a.created_at DESC " +
+                        "    ORDER BY a.createdAt DESC " +
                         "  </otherwise> " +
                         "</choose>  " +
                         "LIMIT #{limit} OFFSET #{start}" +
@@ -60,11 +60,11 @@ public interface ArticleMapper {
                         "      <when test='authorID != null and authorID != \"\"'> " +
                         "        a.authorID = #{authorID}::uuid " +
                         "        <if test='published != null'>" +
-                        "           AND  a.is_published = #{published} " +
+                        "           AND  a.isPublished = #{published} " +
                         "       </if>" +
                         "      </when> " +
                         "      <when test='published != null'> " +
-                        "        a.is_published = #{published} " +
+                        "        a.isPublished = #{published} " +
                         "      </when> " +
                         "    </choose> " +
                         "  </where> " +
@@ -79,18 +79,18 @@ public interface ArticleMapper {
                         "   <where> " +
                         "        a.authorID = #{authorID}::uuid " +
                         "      <if test='published != null'> " +
-                        "         AND  a.is_published = #{published}" +
+                        "         AND  a.isPublished = #{published}" +
                         "      </if>  " +
                         "   </where> " +
                         "   <choose> " +
                         "    <when test='sort == \"title\"'> " +
                         "      ORDER BY a.title " +
                         "    </when> " +
-                        "    <when test='sort == \"updated_at\"'> " +
-                        "      ORDER BY a.updated_at DESC " +
+                        "    <when test='sort == \"updatedAt\"'> " +
+                        "      ORDER BY a.updatedAt DESC " +
                         "    </when> " +
                         "    <otherwise> " +
-                        "      ORDER BY a.created_at DESC " +
+                        "      ORDER BY a.createdAt DESC " +
                         "    </otherwise> " +
                         "</choose>  " +
                         "LIMIT #{limit} OFFSET #{start}" +
@@ -100,7 +100,7 @@ public interface ArticleMapper {
         List<Article> findAuthorsArticles(@Param("authorID") String authorID, @Param("sort") String sort,
                         @Param("limit") Long limit, @Param("start") Long start, @Param("published") Boolean published);
 
-        @Select("INSERT INTO articles (title, authorID, content, is_published, description) VALUES (#{title}, #{authorID}::uuid, #{content}, #{is_published}, #{description}) RETURNING *")
+        @Select("INSERT INTO articles (title, authorID, content, isPublished, description) VALUES (#{title}, #{authorID}::uuid, #{content}, #{isPublished}, #{description}) RETURNING *")
         Article addArticle(Article article);
 
         @Select("<script> " +
@@ -121,11 +121,11 @@ public interface ArticleMapper {
                         "  <when test='sort == \"title\"'> " +
                         "    ORDER BY a.title " +
                         "  </when> " +
-                        "  <when test='sort == \"updated_at\"'> " +
-                        "    ORDER BY a.updated_at DESC " +
+                        "  <when test='sort == \"updatedAt\"'> " +
+                        "    ORDER BY a.updatedAt DESC " +
                         "  </when> " +
                         "  <otherwise> " +
-                        "    ORDER BY a.updated_at DESC " +
+                        "    ORDER BY a.updatedAt DESC " +
                         "  </otherwise> " +
                         "</choose> " +
                         "LIMIT #{limit} OFFSET #{start}" +
@@ -134,7 +134,7 @@ public interface ArticleMapper {
         List<Article> search(@Param("term") String term, @Param("authorID") String authorID, @Param("sort") String sort,
                         @Param("limit") Long limit, @Param("start") Long start);
 
-        @Update("UPDATE articles SET title = #{title}, content = #{content}, is_published = #{is_published}, description = #{description}, updated_at = #{updated_at} WHERE id = #{id}::uuid")
+        @Update("UPDATE articles SET title = #{title}, content = #{content}, isPublished = #{isPublished}, description = #{description}, updatedAt = #{updatedAt} WHERE id = #{id}::uuid")
         void editArticle(Article article);
 
         @Delete("DELETE FROM articles WHERE id = #{id}::uuid")

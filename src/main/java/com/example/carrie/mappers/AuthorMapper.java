@@ -17,10 +17,10 @@ public interface AuthorMapper {
     @Select("SELECT * FROM authors WHERE email = #{email}")
     Author findByEmail(@Param("email") String email);
 
-    @Select("INSERT INTO authors (name, email, dob, gender) VALUES (#{name}, #{email}, #{dob}, #{gender}) RETURNING *")
+    @Select("INSERT INTO authors (username, email, dob, gender, firstName, lastName) VALUES (#{username}, #{email}, #{dob}, #{gender}, #{firstName}, #{lastName}) RETURNING *")
     Author addAuthor(Author author);
 
-    @Select("UPDATE authors SET name = #{name}, email = #{email}, dob = #{dob},  gender = #{gender} WHERE id = #{id}::uuid RETURNING *")
+    @Select("UPDATE authors SET username = #{username}, email = #{email}, dob = #{dob},  gender = #{gender}, firstName = #{firstName}, lastName = #{lastName} WHERE id = #{id}::uuid RETURNING *")
     Author editAuthor(Author author);
 
     @Select("DELETE FROM authors WHERE id = #{id}::uuid RETURNING *")

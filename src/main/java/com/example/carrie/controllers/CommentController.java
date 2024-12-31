@@ -43,6 +43,15 @@ public class CommentController {
     return Success.OK("Successfully Retrieved Article's comments", data);
   }
 
+  @GetMapping("/replies/{id}")
+  public ResponseEntity<?> getCommentReplies(@PathVariable String id,
+      @RequestParam(required = false, defaultValue = "10") Long limit,
+      @RequestParam(required = false, defaultValue = "0") Long start) {
+    CustomData data = commentServiceImpl.getCommentReplies(id, limit, start);
+
+    return Success.OK("Successfully Retrieved Comment's replies", data);
+  }
+
   @GetMapping("/{id}")
   public ResponseEntity<?> getCommentById(@PathVariable String id) {
     List<Comment> data = List.of(commentServiceImpl.getCommentById(id));

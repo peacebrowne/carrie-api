@@ -187,12 +187,12 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
 
       Optional.ofNullable(article.getContent()).ifPresent(content -> existingArticle.setContent(content));
       Optional.ofNullable(article.getTitle()).ifPresent(title -> existingArticle.setTitle(title));
-      Optional.ofNullable(article.getIs_published()).ifPresent(published -> existingArticle.setIs_published(published));
+      Optional.ofNullable(article.getIsPublished()).ifPresent(published -> existingArticle.setIsPublished(published));
       Optional.ofNullable(article.getDescription())
           .ifPresent(description -> existingArticle.setDescription(description));
 
       LocalDateTime currentDate = LocalDateTime.now();
-      existingArticle.setUpdated_at(currentDate);
+      existingArticle.setUpdatedAt(currentDate);
 
       articleMapper.editArticle(existingArticle);
 

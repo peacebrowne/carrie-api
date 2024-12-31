@@ -14,4 +14,6 @@ public interface CommentService {
 
   public Comment deleteComment(String id);
 
+  public CustomData getCommentReplies(String parentCommentID, Long limit, Long start);
+
 }
