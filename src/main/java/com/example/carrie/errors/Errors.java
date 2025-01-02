@@ -1,6 +1,7 @@
 package com.example.carrie.errors;
 
 import com.example.carrie.errors.custom.BadRequest;
+import com.example.carrie.errors.custom.Conflict;
 import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.errors.custom.NotFound;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,13 @@ public class Errors {
     ErrorDetails errorDetails = new ErrorDetails(new Date(), ex.getMessage(), request.getDescription(false),
         HttpStatus.INTERNAL_SERVER_ERROR.value());
     return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+
+  @ExceptionHandler(Conflict.class)
+  public ResponseEntity<?> CONFLICT(Conflict ex, WebRequest request) {
+    ErrorDetails errorDetails = new ErrorDetails(new Date(), ex.getMessage(), request.getDescription(false),
+        HttpStatus.CONFLICT.value());
+    return new ResponseEntity<>(errorDetails, HttpStatus.CONFLICT);
   }
 
 }

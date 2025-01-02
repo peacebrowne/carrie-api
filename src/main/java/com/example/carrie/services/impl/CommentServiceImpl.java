@@ -15,10 +15,10 @@ import com.example.carrie.errors.custom.NotFound;
 import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.mappers.ArticleMapper;
 import com.example.carrie.mappers.CommentMapper;
+import com.example.carrie.dto.CustomDto;
 import com.example.carrie.entities.Article;
 import com.example.carrie.entities.Author;
 import com.example.carrie.entities.Comment;
-import com.example.carrie.models.CustomData;
 import com.example.carrie.services.CommentService;
 import com.example.carrie.utils.validations.UUIDValidator;
 
@@ -39,18 +39,12 @@ public class CommentServiceImpl implements CommentService {
   @Override
   public Comment getCommentById(String id) {
     try {
-      if (!UUIDValidator.isValidUUID(id))
-        throw new BadRequest("Invalid comment ID");
 
-      Optional<Comment> comment = Optional.ofNullable(commentMapper.findById(id));
-
-      if (comment.isEmpty())
-        throw new NotFound("Comment with this id '" + id + "' does not exist!");
-
-      return comment.get();
+      // Retrieve the comment from the database
+      return validateComment(id, "Comment does not exist!");
 
     } catch (BadRequest | NotFound e) {
-      log.error("ERROR: {}", e.getMessage(), e);
+      log.error("Validation Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -61,19 +55,20 @@ public class CommentServiceImpl implements CommentService {
   }
 
   @Override
-  public CustomData getArticleComments(String articleID, Long limit, Long start) {
+  public CustomDto getArticleComments(String articleID, Long limit, Long start) {
     try {
-      Optional<Article> article = Optional.ofNullable(articleMapper.findById(articleID));
 
-      if (article.isEmpty())
-        throw new NotFound("Article does not exist!");
+      // Validate essential fields
+      validateArticle(articleID);
 
+      // Get total comments for a particular article by the ID
       Long total = commentMapper.totalComments(articleID);
+
+      // Get all comments associated with an article by ID
       List<Comment> comments = commentMapper.findArticleComments(articleID, limit, start);
 
-      CustomData data = new CustomData(total, comments);
-
-      return data;
+      // Encapsulate the total count and the list of comments
+      return new CustomDto(total, comments);
 
     } catch (NotFound e) {
       log.error("Not Found: {}", e.getMessage(), e);
@@ -90,88 +85,63 @@ public class CommentServiceImpl implements CommentService {
   public Comment addComment(Comment comment) {
     try {
 
-      if (!UUIDValidator.isValidUUID(comment.getArticleID()))
-        throw new BadRequest("Invalid Article ID");
-
-      if (!UUIDValidator.isValidUUID(comment.getAuthorID()))
-        throw new BadRequest("Invalid Author ID");
-
+      // Validate parent comment ID if present
       Optional.ofNullable(comment.getParentCommentID()).ifPresent(parentCommentID -> {
-        if (!UUIDValidator.isValidUUID(parentCommentID))
-          throw new BadRequest("Invalid Comment ID");
+        validateComment(comment.getParentCommentID(), "Invalid Parent Comment ID");
       });
 
-      Optional<Author> author = Optional.ofNullable(authorMapper.findById(comment.getAuthorID()));
+      // Ensure the author and article exist
+      validateAuthor(comment.getAuthorID());
+      validateArticle(comment.getArticleID());
 
-      if (author.isEmpty())
-        throw new NotFound("Author of this comment does not exist!");
-
-      Optional<Article> article = Optional.ofNullable(articleMapper.findById(comment.getArticleID()));
-
-      if (article.isEmpty())
-        throw new NotFound("Article does not exist!");
-
+      // Save the comment
       Comment createdComment = commentMapper.addComment(comment);
-
       return createdComment;
+
     } catch (BadRequest | NotFound e) {
-      log.error("Error: {}", e.getMessage(), e);
+      log.error("Validation Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
-      log.error(
-          "Internal Server Error: {}", e.getMessage(), e);
-      throw new InternalServerError(
-          "An unexpected error occurred while adding a Comment");
+      log.error("Internal Server Error while adding comment: {}", e.getMessage(), e);
+      throw new InternalServerError("An unexpected error occurred while adding a Comment.");
     }
   }
 
   @Override
   public Comment editComment(Comment comment, String id) {
     try {
+      // Retrieve the existing comment
       Comment existingComment = getCommentById(id);
 
+      // Update Author ID if provided
       Optional.ofNullable(comment.getAuthorID()).ifPresent(authorID -> {
-        if (!UUIDValidator.isValidUUID(authorID))
-          throw new BadRequest("Invalid Author ID");
-
-        Optional<Author> author = Optional.ofNullable(authorMapper.findById(comment.getAuthorID()));
-
-        if (author.isEmpty())
-          throw new NotFound("Author of this comment does not exist!");
-
-        existingComment.setAuthorID(authorID);
+        validateAuthor(comment.getAuthorID());
+        existingComment.setAuthorID(comment.getAuthorID());
       });
 
+      // Update Article ID if provided
       Optional.ofNullable(comment.getArticleID()).ifPresent(articleID -> {
-        if (!UUIDValidator.isValidUUID(articleID))
-          throw new BadRequest("Invalid Article ID");
-
-        Optional<Article> article = Optional.ofNullable(articleMapper.findById(comment.getArticleID()));
-
-        if (article.isEmpty())
-          throw new NotFound("Article with this" + comment.getArticleID() + " does not exist!");
-
-        existingComment.setArticleID(articleID);
+        validateArticle(comment.getArticleID());
+        existingComment.setArticleID(comment.getArticleID());
       });
 
+      // Update content if provided
       Optional.ofNullable(comment.getContent()).ifPresent(content -> existingComment.setContent(content));
 
-      LocalDateTime currentDate = LocalDateTime.now();
-      existingComment.setUpdatedAt(currentDate);
+      // Update the timestamp
+      existingComment.setUpdatedAt(LocalDateTime.now());
 
+      // Update the comment
       commentMapper.editComment(existingComment);
 
       return existingComment;
 
     } catch (BadRequest | NotFound e) {
-      log.error("Error: {}", e.getMessage(), e);
+      log.error("Validation Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
-
-      log.error("Internal Server Error: {}", e.getMessage(), e);
-      throw new InternalServerError(
-          "An unexpected error occurred while editing a Comment.");
-
+      log.error("Internal Server Error while editing comment: {}", e.getMessage(), e);
+      throw new InternalServerError("An unexpected error occurred while editing the Comment.");
     }
   }
 
@@ -179,12 +149,15 @@ public class CommentServiceImpl implements CommentService {
   public Comment deleteComment(String id) {
     try {
 
+      // Check if the comment exists by ID
       Comment comment = getCommentById(id);
+
+      // Delete the comment by ID
       commentMapper.deleteComment(id);
       return comment;
 
     } catch (BadRequest | NotFound e) {
-      log.error("ERROR: {}", e.getMessage(), e);
+      log.error("Validation Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -193,17 +166,21 @@ public class CommentServiceImpl implements CommentService {
   }
 
   @Override
-  public CustomData getCommentReplies(String parentCommentID, Long limit, Long start) {
+  public CustomDto getCommentReplies(String parentCommentID, Long limit, Long start) {
 
     try {
 
+      // Check if comment exists
       getCommentById(parentCommentID);
 
+      // Get total replies for a particular comment by the ID
       Long total = commentMapper.totalComments(parentCommentID);
+
+      // Get all replies associated with a comment by ID
       List<Comment> comments = commentMapper.findCommentReplies(parentCommentID, limit, start);
 
-      CustomData data = new CustomData(total, comments);
-
+      // Encapsulate the total count and the list of comments
+      CustomDto data = new CustomDto(total, comments);
       return data;
 
     } catch (NotFound e) {
@@ -216,6 +193,45 @@ public class CommentServiceImpl implements CommentService {
 
     }
 
+  }
+
+  private void validateUUID(String id, String errorMessage) {
+    if (!UUIDValidator.isValidUUID(id)) {
+      throw new BadRequest(errorMessage);
+    }
+  }
+
+  private void validateAuthor(String authorID) {
+
+    // Validate Author ID
+    validateUUID(authorID, "Invalid Author ID");
+
+    Author author = authorMapper.findById(authorID);
+    if (author == null) {
+      throw new NotFound("Author does not exist!");
+    }
+  }
+
+  private void validateArticle(String articleID) {
+    // Validate Article ID
+    validateUUID(articleID, "Invalid Article ID");
+
+    Article article = articleMapper.findById(articleID);
+    if (article == null) {
+      throw new NotFound("Article does not exist!");
+    }
+  }
+
+  private Comment validateComment(String commentID, String errorMessage) {
+    // Validate Comment ID
+    validateUUID(commentID, "Invalid Comment ID");
+
+    Comment comment = commentMapper.findById(commentID);
+    if (comment == null) {
+      throw new NotFound(errorMessage);
+    }
+
+    return comment;
   }
 
 }

@@ -1,12 +1,12 @@
 package com.example.carrie.services;
 
+import com.example.carrie.dto.CustomDto;
 import com.example.carrie.entities.Comment;
-import com.example.carrie.models.CustomData;
 
 public interface CommentService {
   public Comment getCommentById(String id);
 
-  public CustomData getArticleComments(String articleID, Long limit, Long start);
+  public CustomDto getArticleComments(String articleID, Long limit, Long start);
 
   public Comment addComment(Comment comment);
 
@@ -14,6 +14,6 @@ public interface CommentService {
 
   public Comment deleteComment(String id);
 
-  public CustomData getCommentReplies(String parentCommentID, Long limit, Long start);
+  public CustomDto getCommentReplies(String parentCommentID, Long limit, Long start);
 
 }

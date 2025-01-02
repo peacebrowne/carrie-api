@@ -63,9 +63,14 @@ CREATE TABLE IF NOT EXISTS article_tags (
 CREATE TABLE IF NOT EXISTS claps(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     authorID UUID NOT NULL,
-    articleID UUID NOT NULL,
+    articleID UUID,
+    commentID UUID,
     count INTEGER DEFAULT 1,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(authorID) REFERENCES authors(id) ON DELETE CASCADE,
-    FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE
+    FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE,
+    FOREIGN KEY(commentID) REFERENCES comments(id) ON DELETE CASCADE,
+    UNIQUE(authorID,articleID),
+    UNIQUE(authorID,commentID)
 )

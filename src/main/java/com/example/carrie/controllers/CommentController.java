@@ -3,8 +3,8 @@ package com.example.carrie.controllers;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.carrie.dto.CustomDto;
 import com.example.carrie.entities.Comment;
-import com.example.carrie.models.CustomData;
 import com.example.carrie.success.Success;
 import com.example.carrie.errors.custom.BadRequest;
 
@@ -38,7 +38,7 @@ public class CommentController {
   public ResponseEntity<?> getArticleComments(@PathVariable String id,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
-    CustomData data = commentServiceImpl.getArticleComments(id, limit, start);
+    CustomDto data = commentServiceImpl.getArticleComments(id, limit, start);
 
     return Success.OK("Successfully Retrieved Article's comments", data);
   }
@@ -47,7 +47,7 @@ public class CommentController {
   public ResponseEntity<?> getCommentReplies(@PathVariable String id,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
-    CustomData data = commentServiceImpl.getCommentReplies(id, limit, start);
+    CustomDto data = commentServiceImpl.getCommentReplies(id, limit, start);
 
     return Success.OK("Successfully Retrieved Comment's replies", data);
   }

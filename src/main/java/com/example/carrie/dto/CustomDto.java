@@ -1,12 +1,11 @@
-package com.example.carrie.models;
+package com.example.carrie.dto;
 
 import java.util.List;
 
 import lombok.Data;
 
 @Data
-
-public class CustomData {
+public class CustomDto {
 
   /*
    * Total count of the data items.
@@ -28,7 +27,7 @@ public class CustomData {
    * 
    * @param values the list of data items
    */
-  public CustomData(Long total, List<?> values) {
+  public CustomDto(Long total, List<?> values) {
     this.total = total;
     this.values = values;
   }

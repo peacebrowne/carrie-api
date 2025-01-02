@@ -10,9 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.carrie.dto.CustomDto;
 import com.example.carrie.entities.Article;
 import com.example.carrie.errors.custom.BadRequest;
-import com.example.carrie.models.CustomData;
 import com.example.carrie.services.impl.ArticleServiceImpl;
 
 @RestController
@@ -32,7 +32,7 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomData data = articleServiceImpl.getAllArticles(sort, limit, start, published);
+    CustomDto data = articleServiceImpl.getAllArticles(sort, limit, start, published);
     return Success.OK("Successfully Retrieved all Articles.", data);
   }
 
@@ -50,7 +50,7 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomData data = articleServiceImpl.getAuthorsArticles(id, sort, limit, start, published);
+    CustomDto data = articleServiceImpl.getAuthorsArticles(id, sort, limit, start, published);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   };
 
@@ -61,7 +61,7 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomData data = articleServiceImpl.searchArticles(term, id, sort, limit, start);
+    CustomDto data = articleServiceImpl.searchArticles(term, id, sort, limit, start);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   };
 
@@ -72,7 +72,7 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomData data = articleServiceImpl.searchArticles(term, null, sort, limit, start);
+    CustomDto data = articleServiceImpl.searchArticles(term, null, sort, limit, start);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   };
 

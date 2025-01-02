@@ -2,6 +2,7 @@ package com.example.carrie.services.impl;
 
 import com.example.carrie.entities.Author;
 import com.example.carrie.errors.custom.BadRequest;
+import com.example.carrie.errors.custom.Conflict;
 import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.errors.custom.NotFound;
 
@@ -40,7 +41,7 @@ public class AuthorServiceImpl implements AuthorService {
             Optional<Author> author = Optional.ofNullable(authorMapper.findById(id));
 
             if (author.isEmpty())
-                throw new NotFound("Author with this id '" + id + "' does not exist!");
+                throw new NotFound("Author does not exist.");
 
             return author.get();
         } catch (BadRequest | NotFound e) {
@@ -72,13 +73,12 @@ public class AuthorServiceImpl implements AuthorService {
         try {
             String email = author.getEmail();
 
-            if (!EmailValidator.isValidEmail(email))
-                throw new BadRequest("Invalid email address!");
+            validateEmail(email);
 
             Optional<Author> authorExist = Optional.ofNullable(authorMapper.findByEmail(email));
 
             if (authorExist.isPresent())
-                throw new BadRequest("User with this email '" + email + "' already exist");
+                throw new BadRequest("Author already exist.");
 
             return authorMapper.addAuthor(author);
         } catch (BadRequest e) {
@@ -100,15 +100,14 @@ public class AuthorServiceImpl implements AuthorService {
 
             if (author.getEmail() != null) {
 
-                if (!EmailValidator.isValidEmail(author.getEmail()))
-                    throw new BadRequest("Invalid email address!");
+                validateEmail(author.getEmail());
 
                 if (!Objects.equals(author.getEmail(), existingAuthor.getEmail())) {
 
                     Optional<Author> authorOptional = Optional.ofNullable(authorMapper.findByEmail(author.getEmail()));
 
                     if (authorOptional.isPresent())
-                        throw new BadRequest("Email is already taken!");
+                        throw new Conflict("Email is already taken!");
 
                     existingAuthor.setEmail(author.getEmail());
 
@@ -141,13 +140,18 @@ public class AuthorServiceImpl implements AuthorService {
             return authorMapper.deleteAuthor(id);
 
         } catch (BadRequest | NotFound e) {
-            log.error("ERROR: {}", e.getMessage(), e);
+            log.error("Validation Error: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError("An unexpected error occurred while deleting the author.");
         }
 
+    }
+
+    private void validateEmail(String email) {
+        if (!EmailValidator.isValidEmail(email))
+            throw new BadRequest("Invalid email address!");
     }
 
 }
