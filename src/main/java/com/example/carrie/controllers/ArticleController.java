@@ -7,7 +7,6 @@ import com.example.carrie.success.Success;
 
 import jakarta.validation.Valid;
 
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -82,7 +81,7 @@ public class ArticleController {
 
   @PostMapping
   public ResponseEntity<?> addArticle(
-      @RequestPart Article article,
+      @Valid @RequestPart Article article,
       @RequestPart(required = false) MultipartFile image,
       BindingResult result) {
 
