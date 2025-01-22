@@ -1,6 +1,7 @@
 package com.example.carrie.mappers;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.ibatis.annotations.*;
 
@@ -13,7 +14,7 @@ public interface ArticleMapper {
         List<Article> findByTitle(@Param("title") String title);
 
         @Select("SELECT * FROM articles WHERE id = #{id}::uuid")
-        Article findById(@Param("id") String id);
+        Optional<Article> findById(@Param("id") String id);
 
         @Select("<script> " +
                         "SELECT * FROM articles a " +

@@ -1,6 +1,7 @@
 package com.example.carrie.mappers;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
@@ -13,10 +14,10 @@ import com.example.carrie.entities.Clap;
 public interface ClapMapper {
 
   @Select("SELECT * FROM claps WHERE authorID = #{authorID}::uuid AND (articleID = #{targetID}::uuid OR commentID = #{targetID}::uuid)")
-  Clap findClapByAuthorAndTarget(@Param("authorID") String authorID, @Param("targetID") String targetID);
+  Optional<Clap> findClapByAuthorAndTarget(@Param("authorID") String authorID, @Param("targetID") String targetID);
 
   @Select("SELECT * FROM claps WHERE id = #{id}::uuid")
-  Clap findById(@Param("id") String id);
+  Optional<Clap> findById(@Param("id") String id);
 
   @Select("SELECT * FROM claps WHERE articleID = #{targetID}::uuid OR commentID = #{targetID}::uuid")
   List<Clap> findClapByTarget(@Param("targetID") String targetID);

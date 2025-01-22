@@ -1,4 +1,4 @@
-package com.example.carrie.model;
+package com.example.carrie.enumerators;
 
 public enum TargetType {
   ARTICLE, COMMENT

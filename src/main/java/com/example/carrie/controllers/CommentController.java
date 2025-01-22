@@ -12,10 +12,12 @@ import jakarta.validation.Valid;
 
 import com.example.carrie.services.impl.CommentServiceImpl;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/comments")
 public class CommentController {
 
@@ -54,7 +57,7 @@ public class CommentController {
 
   @GetMapping("/{id}")
   public ResponseEntity<?> getCommentById(@PathVariable String id) {
-    List<Comment> data = List.of(commentServiceImpl.getCommentById(id));
+    List<Comment> data = Arrays.asList(commentServiceImpl.getCommentById(id));
     return Success.OK("Successfully Retrieved Single Comment", data);
   }
 
@@ -64,19 +67,19 @@ public class CommentController {
     if (result.hasErrors())
       throw new BadRequest(result.getAllErrors().get(0).getDefaultMessage());
 
-    List<Comment> data = List.of(commentServiceImpl.addComment(comment));
+    List<Comment> data = Arrays.asList(commentServiceImpl.addComment(comment));
     return Success.CREATED("Successfully Created Comment.", data);
   }
 
   @PutMapping("/{id}")
   public ResponseEntity<?> editComment(@RequestBody Comment comment, @PathVariable String id) {
-    List<Comment> data = List.of(commentServiceImpl.editComment(comment, id));
+    List<Comment> data = Arrays.asList(commentServiceImpl.editComment(comment, id));
     return Success.OK("Successfully Updated Comment.", data);
   }
 
   @DeleteMapping("/{id}")
   public ResponseEntity<?> deleteComment(@PathVariable String id) {
-    List<Comment> data = List.of(commentServiceImpl.deleteComment(id));
+    List<Comment> data = Arrays.asList(commentServiceImpl.deleteComment(id));
     return Success.OK("Successfully Deleted Comment.", data);
   }
 

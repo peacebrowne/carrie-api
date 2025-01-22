@@ -38,7 +38,7 @@ public class AuthorServiceImpl implements AuthorService {
             if (!UUIDValidator.isValidUUID(id))
                 throw new BadRequest("Invalid author ID!");
 
-            Optional<Author> author = Optional.ofNullable(authorMapper.findById(id));
+            Optional<Author> author = authorMapper.findById(id);
 
             if (author.isEmpty())
                 throw new NotFound("Author does not exist.");
@@ -75,7 +75,7 @@ public class AuthorServiceImpl implements AuthorService {
 
             validateEmail(email);
 
-            Optional<Author> authorExist = Optional.ofNullable(authorMapper.findByEmail(email));
+            Optional<Author> authorExist = authorMapper.findByEmail(email);
 
             if (authorExist.isPresent())
                 throw new BadRequest("Author already exist.");
@@ -104,7 +104,7 @@ public class AuthorServiceImpl implements AuthorService {
 
                 if (!Objects.equals(author.getEmail(), existingAuthor.getEmail())) {
 
-                    Optional<Author> authorOptional = Optional.ofNullable(authorMapper.findByEmail(author.getEmail()));
+                    Optional<Author> authorOptional = authorMapper.findByEmail(author.getEmail());
 
                     if (authorOptional.isPresent())
                         throw new Conflict("Email is already taken!");

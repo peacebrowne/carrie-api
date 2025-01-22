@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public class ClapDto {
+
   /*
    * Represents the type of target for the data, e.g., "article" or "comment".
    * Helps differentiate whether the data is associated with an article or a

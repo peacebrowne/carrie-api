@@ -74,3 +74,16 @@ CREATE TABLE IF NOT EXISTS claps(
     UNIQUE(authorID,articleID),
     UNIQUE(authorID,commentID)
 )
+
+CREATE TABLE IF NOT EXISTS images(
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT,
+    type TEXT,
+    data BYTEA,
+    articleID UUID,
+    authorID UUID,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE,
+    FOREIGN KEY(authorID) REFERENCES authors(id) ON DELETE CASCADE
+)

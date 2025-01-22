@@ -8,18 +8,21 @@ import com.example.carrie.dto.ClapDto;
 import com.example.carrie.entities.Clap;
 import com.example.carrie.services.impl.ClapServiceImpl;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
-@RequestMapping("/api/claps")
+@RequestMapping("/api/claps")@CrossOrigin
+
 public class ClapController {
 
   private final ClapServiceImpl clapServiceImpl;
@@ -30,7 +33,7 @@ public class ClapController {
 
   @GetMapping("/{id}")
   public ResponseEntity<?> findClapById(@PathVariable String id) {
-    List<Clap> data = List.of(clapServiceImpl.findById(id));
+    List<Clap> data = Arrays.asList(clapServiceImpl.findById(id));
     return Success.OK("Successfully Retrieved Clap", data);
   }
 
@@ -43,13 +46,13 @@ public class ClapController {
 
   @PostMapping
   public ResponseEntity<?> addClap(@RequestBody Clap clap) {
-    List<Clap> data = List.of(clapServiceImpl.addClap(clap));
+    List<Clap> data = Arrays.asList(clapServiceImpl.addClap(clap));
     return Success.CREATED("Successfully Created Claps", data);
   }
 
   @DeleteMapping("/{id}")
   public ResponseEntity<?> deleteArticle(@PathVariable String id) {
-    List<Clap> data = List.of(clapServiceImpl.deleteClap(id));
+    List<Clap> data = Arrays.asList(clapServiceImpl.deleteClap(id));
     return Success.OK("Successfully Deleted Article.", data);
   }
 

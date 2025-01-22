@@ -1,11 +1,13 @@
 package com.example.carrie.controllers;
 
+import java.util.Collections;
 import java.util.List;
 
 import com.example.carrie.success.Success;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -14,8 +16,10 @@ import com.example.carrie.dto.CustomDto;
 import com.example.carrie.entities.Article;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.services.impl.ArticleServiceImpl;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/articles")
 public class ArticleController {
 
@@ -39,7 +43,7 @@ public class ArticleController {
   @GetMapping("/{id}")
   public ResponseEntity<?> getArticleById(@PathVariable String id) {
 
-    List<Article> data = List.of(articleServiceImpl.getArticleById(id));
+    List<Article> data = Collections.singletonList(articleServiceImpl.getArticleById(id));
     return Success.OK("Successfully Retrieved single Article.", data);
   }
 
@@ -52,7 +56,7 @@ public class ArticleController {
 
     CustomDto data = articleServiceImpl.getAuthorsArticles(id, sort, limit, start, published);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
-  };
+  }
 
   @GetMapping("/authors/{id}/search")
   public ResponseEntity<?> searchAuthorArticles(@PathVariable String id,
@@ -63,7 +67,7 @@ public class ArticleController {
 
     CustomDto data = articleServiceImpl.searchArticles(term, id, sort, limit, start);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
-  };
+  }
 
   @GetMapping("/search")
   public ResponseEntity<?> searchArticles(
@@ -74,27 +78,32 @@ public class ArticleController {
 
     CustomDto data = articleServiceImpl.searchArticles(term, null, sort, limit, start);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
-  };
+  }
 
   @PostMapping
-  public ResponseEntity<?> addArticle(@Valid @RequestBody Article article, BindingResult result) {
+  public ResponseEntity<?> addArticle(
+      @RequestPart Article article,
+      @RequestPart(required = false) MultipartFile image,
+      BindingResult result) {
 
-    if (result.hasErrors())
+    if (result.hasErrors()) {
       throw new BadRequest(result.getAllErrors().get(0).getDefaultMessage());
+    }
 
-    List<Article> data = List.of(articleServiceImpl.addArticle(article));
+    List<Article> data = Collections.singletonList(articleServiceImpl.addArticle(article, image));
     return Success.CREATED("Successfully Created Article.", data);
+
   }
 
   @PutMapping("/{id}")
   public ResponseEntity<?> editArticle(@RequestBody Article article, @PathVariable String id) {
-    List<Article> data = List.of(articleServiceImpl.editArticle(article, id));
+    List<Article> data = Collections.singletonList(articleServiceImpl.editArticle(article, id));
     return Success.OK("Successfully Updated Article.", data);
   }
 
   @DeleteMapping("/{id}")
   public ResponseEntity<?> deleteArticle(@PathVariable String id) {
-    List<Article> data = List.of(articleServiceImpl.deleteArticle(id));
+    List<Article> data = Collections.singletonList(articleServiceImpl.deleteArticle(id));
     return Success.OK("Successfully Deleted Article.", data);
   }
 

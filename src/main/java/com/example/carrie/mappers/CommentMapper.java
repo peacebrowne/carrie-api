@@ -1,6 +1,7 @@
 package com.example.carrie.mappers;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.ibatis.annotations.*;
 
@@ -12,7 +13,7 @@ public interface CommentMapper {
   Comment addComment(Comment comment);
 
   @Select("SELECT * FROM comments WHERE id = #{id}::uuid")
-  Comment findById(@Param("id") String id);
+  Optional<Comment> findById(@Param("id") String id);
 
   @Select("SELECT * FROM comments WHERE articleID = #{articleID}::uuid ORDER BY createdAt LIMIT #{limit} OFFSET #{start}")
   List<Comment> findArticleComments(@Param("articleID") String articleID, @Param("limit") Long limit,

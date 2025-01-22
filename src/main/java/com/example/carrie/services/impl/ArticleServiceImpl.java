@@ -7,6 +7,7 @@ import com.example.carrie.errors.custom.NotFound;
 import com.example.carrie.mappers.ArticleMapper;
 import com.example.carrie.mappers.ArticleTagMapper;
 import com.example.carrie.mappers.AuthorMapper;
+import com.example.carrie.mappers.ImageMapper;
 import com.example.carrie.mappers.TagMapper;
 import com.example.carrie.services.ArticleService;
 import com.example.carrie.utils.validations.UUIDValidator;
@@ -15,10 +16,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.carrie.dto.CustomDto;
 import com.example.carrie.entities.Article;
 import com.example.carrie.entities.Author;
+import com.example.carrie.entities.Image;
 import com.example.carrie.entities.Tag;
 
 import java.time.LocalDateTime;
@@ -28,19 +31,26 @@ import java.util.Optional;
 
 @Service
 @Transactional
-public class ArticleServiceImpl extends TagServiceImpl implements ArticleService {
+public class ArticleServiceImpl extends ImageServiceImpl implements ArticleService {
   private final ArticleMapper articleMapper;
   private final AuthorMapper authorMapper;
   private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
+
+  private TagServiceImpl tagServiceImpl = null;
 
   public ArticleServiceImpl(
       ArticleMapper articleMapper,
       AuthorMapper authorMapper,
       TagMapper tagMapper,
-      ArticleTagMapper articleTagMapper) {
-    super(tagMapper, articleTagMapper);
+      ArticleTagMapper articleTagMapper,
+      ImageMapper imageMapper
+
+  ) {
+    // super(tagMapper, articleTagMapper);
+    super(imageMapper);
     this.articleMapper = articleMapper;
     this.authorMapper = authorMapper;
+    tagServiceImpl = new TagServiceImpl(tagMapper, articleTagMapper);
   }
 
   @Override
@@ -50,12 +60,13 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
 
       /*
        * Validate the existence of the article using its ID and return the article if
-       * it exist.
+       * it exists.
        */
       Article article = validateArticle(id);
 
       // Retrieve the list of tags associated with the article
-      List<String> articleTags = getArticleTags(id);
+      List<String> articleTags = tagServiceImpl.getArticleTags(id);
+      // List<String> articleTags = getArticleTags(id);
 
       // Set the retrieved tags to the article
       article.setTags(articleTags);
@@ -88,14 +99,13 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
 
       // Add related tags to articles
       articles.forEach(article -> {
-        List<String> tags = getArticleTags(article.getId());
+        List<String> tags = tagServiceImpl.getArticleTags(article.getId());
         article.setTags(tags);
       });
 
       // Encapsulate the total count and the list of articles
-      CustomDto data = new CustomDto(total, articles);
 
-      return data;
+      return new CustomDto(total, articles);
 
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -105,14 +115,16 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
   }
 
   @Override
-  public Article addArticle(Article article) {
+  public Article addArticle(Article article, MultipartFile image) {
 
     try {
+
       String title = article.getTitle();
       List<String> tagNames = article.getTags();
 
       // Create tag if not exists.
-      List<Tag> tags = addTags(tagNames);
+      List<Tag> tags = tagServiceImpl.addTags(tagNames);
+      // List<Tag> tags = addTags(tagNames);
 
       // Retrieve all existing articles with the same Title
       List<Article> existingArticles = articleMapper.findByTitle(title);
@@ -134,11 +146,15 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
       Article createdArticle = articleMapper.addArticle(article);
       createdArticle.setTags(tagNames);
 
+      // Create image
+      Image createdImage = addImage(image, createdArticle.getId(), "article");
+
       // Creates a connection between articles and tags
-      addArticleTags(tags, createdArticle.getId());
+      tagServiceImpl.addArticleTags(tags, createdArticle.getId());
+      createdArticle.setImage(createdImage);
       return createdArticle;
 
-    } catch (BadRequest | NotFound e) {
+    } catch (BadRequest | Conflict | NotFound e) {
       log.error("Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
@@ -165,13 +181,12 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
 
       // Add related tags to articles
       articles.forEach(article -> {
-        List<String> tags = getArticleTags(article.getId());
+        List<String> tags = tagServiceImpl.getArticleTags(article.getId());
         article.setTags(tags);
       });
 
       // Encapsulate the total count and the list of an Author's article
-      CustomDto data = new CustomDto(total, articles);
-      return data;
+      return new CustomDto(total, articles);
 
     } catch (NotFound e) {
       log.error("Not Found: {}", e.getMessage(), e);
@@ -207,7 +222,7 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
       articleMapper.editArticle(existingArticle);
 
       // Update the article's tags with the new list and return the updated tag names
-      List<String> tagNames = editArticleTags(id, article.getTags());
+      List<String> tagNames = tagServiceImpl.editArticleTags(id, article.getTags());
 
       // Set the updated tags to the existing article
       existingArticle.setTags(tagNames);
@@ -258,13 +273,11 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
 
       // Add related tags to articles
       articles.forEach(article -> {
-        List<String> tags = getArticleTags(article.getId());
+        List<String> tags = tagServiceImpl.getArticleTags(article.getId());
         article.setTags(tags);
       });
 
-      CustomDto data = new CustomDto(total, articles);
-
-      return data;
+      return new CustomDto(total, articles);
 
     } catch (BadRequest e) {
       log.error("Bad Request: {}", e.getMessage(), e);
@@ -289,8 +302,8 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
     // Validate Author ID
     validateUUID(authorID, "Invalid Author ID");
 
-    Author author = authorMapper.findById(authorID);
-    if (author == null) {
+    Optional<Author> author = authorMapper.findById(authorID);
+    if (author.isEmpty()) {
       throw new NotFound("Author does not exist!");
     }
   }
@@ -299,11 +312,11 @@ public class ArticleServiceImpl extends TagServiceImpl implements ArticleService
     // Validate Article ID
     validateUUID(articleID, "Invalid Article ID");
 
-    Article article = articleMapper.findById(articleID);
-    if (article == null) {
+    Optional<Article> article = articleMapper.findById(articleID);
+    if (article.isEmpty()) {
       throw new NotFound("Article does not exist!");
     }
 
-    return article;
+    return article.get();
   }
 }

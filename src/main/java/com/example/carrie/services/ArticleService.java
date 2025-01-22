@@ -1,5 +1,7 @@
 package com.example.carrie.services;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.example.carrie.dto.CustomDto;
 import com.example.carrie.entities.Article;
 
@@ -8,7 +10,7 @@ public interface ArticleService {
 
   public CustomDto getAllArticles(String sort, Long limit, Long start, Boolean published);
 
-  public Article addArticle(Article article);
+  public Article addArticle(Article article, MultipartFile image);
 
   public CustomDto getAuthorsArticles(String authorID, String sort, Long limit, Long start, Boolean published);
 

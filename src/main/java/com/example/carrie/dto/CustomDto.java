@@ -19,16 +19,9 @@ public class CustomDto {
    */
   private List<?> values;
 
-  /*
-   * Constructor for CustomData.
-   * Initializes the total count and the list of data values.
-   *
-   * @param total the total count of data items
-   * 
-   * @param values the list of data items
-   */
   public CustomDto(Long total, List<?> values) {
     this.total = total;
     this.values = values;
   }
+
 }

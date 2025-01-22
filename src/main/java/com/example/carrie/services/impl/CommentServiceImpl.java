@@ -25,7 +25,7 @@ import com.example.carrie.utils.validations.UUIDValidator;
 @Service
 @Transactional
 public class CommentServiceImpl implements CommentService {
-  private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(CommentServiceImpl.class);
   private final CommentMapper commentMapper;
   private final ArticleMapper articleMapper;
   private final AuthorMapper authorMapper;
@@ -206,8 +206,8 @@ public class CommentServiceImpl implements CommentService {
     // Validate Author ID
     validateUUID(authorID, "Invalid Author ID");
 
-    Author author = authorMapper.findById(authorID);
-    if (author == null) {
+    Optional<Author> author = authorMapper.findById(authorID);
+    if (author.isEmpty()) {
       throw new NotFound("Author does not exist!");
     }
   }
@@ -216,8 +216,8 @@ public class CommentServiceImpl implements CommentService {
     // Validate Article ID
     validateUUID(articleID, "Invalid Article ID");
 
-    Article article = articleMapper.findById(articleID);
-    if (article == null) {
+    Optional<Article> article = articleMapper.findById(articleID);
+    if (article.isEmpty()) {
       throw new NotFound("Article does not exist!");
     }
   }
@@ -226,12 +226,12 @@ public class CommentServiceImpl implements CommentService {
     // Validate Comment ID
     validateUUID(commentID, "Invalid Comment ID");
 
-    Comment comment = commentMapper.findById(commentID);
-    if (comment == null) {
+    Optional<Comment> comment = commentMapper.findById(commentID);
+    if (comment.isEmpty()) {
       throw new NotFound(errorMessage);
     }
 
-    return comment;
+    return comment.get();
   }
 
 }

@@ -1,7 +1,9 @@
 package com.example.carrie.services.impl;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -30,7 +32,7 @@ import com.example.carrie.utils.validations.UUIDValidator;
 @Transactional
 public class ClapServiceImpl implements ClapService {
 
-  private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(ClapServiceImpl.class);
   private final CommentMapper commentMapper;
   private final ArticleMapper articleMapper;
   private final AuthorMapper authorMapper;
@@ -51,13 +53,13 @@ public class ClapServiceImpl implements ClapService {
 
       validateUUID(id, "Invalid Clap ID");
 
-      Clap clap = clapMapper.findById(id);
+      Optional<Clap> clap = clapMapper.findById(id);
 
-      if (clap == null) {
+      if (clap.isEmpty()) {
         throw new NotFound("Clap does not exist!");
       }
 
-      return clap;
+      return clap.get();
 
     } catch (BadRequest | NotFound e) {
       log.error("Not Found: {}", e.getMessage(), e);
@@ -76,7 +78,7 @@ public class ClapServiceImpl implements ClapService {
       // Validate Clap Data
       validateClap(clap);
 
-      Clap existingClaps = null;
+      Optional<Clap> existingClaps = null;
 
       if (clap.getArticleID() != null) {
         existingClaps = clapMapper.findClapByAuthorAndTarget(clap.getAuthorID(), clap.getArticleID());
@@ -85,8 +87,8 @@ public class ClapServiceImpl implements ClapService {
       }
 
       if (existingClaps != null) {
-        updateClapCount(existingClaps);
-        return existingClaps;
+        updateClapCount(existingClaps.get());
+        return existingClaps.get();
       }
 
       // Save the clap
@@ -155,8 +157,8 @@ public class ClapServiceImpl implements ClapService {
     // Validate Author ID
     validateUUID(authorID, "Invalid Author ID");
 
-    Author author = authorMapper.findById(authorID);
-    if (author == null) {
+    Optional<Author> author = authorMapper.findById(authorID);
+    if (author.isEmpty()) {
       throw new NotFound("Author does not exist!");
     }
   }
@@ -165,8 +167,8 @@ public class ClapServiceImpl implements ClapService {
     // Validate Article ID
     validateUUID(articleID, "Invalid Article ID");
 
-    Article article = articleMapper.findById(articleID);
-    if (article == null) {
+    Optional<Article> article = articleMapper.findById(articleID);
+    if (article.isEmpty()) {
       throw new NotFound("Article does not exist!");
     }
   }
@@ -175,8 +177,8 @@ public class ClapServiceImpl implements ClapService {
     // Validate Comment ID
     validateUUID(commentID, "Invalid Comment ID");
 
-    Comment comment = commentMapper.findById(commentID);
-    if (comment == null) {
+    Optional<Comment> comment = commentMapper.findById(commentID);
+    if (comment.isEmpty()) {
       throw new NotFound("Comment does not exist!");
     }
   }
@@ -205,7 +207,7 @@ public class ClapServiceImpl implements ClapService {
     // Validate target ID.
     validateUUID(targetID, "Invalid Target ID");
 
-    if (!List.of("article", "comment").contains(targetType.toLowerCase())) {
+    if (!Arrays.asList("article", "comment").contains(targetType.toLowerCase())) {
       throw new BadRequest("Invalid target type. Must be 'article' or 'comment'.");
     }
 

@@ -12,9 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/authors")
 public class AuthorController {
     private final AuthorServiceImpl authorServiceImpl;
@@ -26,7 +28,7 @@ public class AuthorController {
     @GetMapping("/{id}")
     public ResponseEntity<?> findAuthorById(@PathVariable(required = true) String id) {
         Author author = authorServiceImpl.getAuthorById(id);
-        List<Author> data = List.of(author);
+        List<Author> data = Arrays.asList(author);
 
         return Success.OK("Successfully Retrieved Author", data);
     }
@@ -49,7 +51,7 @@ public class AuthorController {
         }
 
         Author createdAuthor = authorServiceImpl.addAuthor(author);
-        List<Author> data = List.of(createdAuthor);
+        List<Author> data = Arrays.asList(createdAuthor);
 
         return Success.CREATED("Successfully created Author.", data);
     }
@@ -58,7 +60,7 @@ public class AuthorController {
     public ResponseEntity<?> editAuthor(@RequestBody Author author, @PathVariable(required = true) String id) {
 
         Author editedAuthor = authorServiceImpl.editAuthor(author, id);
-        List<Author> data = List.of(editedAuthor);
+        List<Author> data = Arrays.asList(editedAuthor);
 
         return Success.OK("Successfully Updated Author", data);
     }
@@ -66,7 +68,7 @@ public class AuthorController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAuthor(@PathVariable(required = true) String id) {
         Author deletedAuthor = authorServiceImpl.deleteAuthor(id);
-        List<Author> data = List.of(deletedAuthor);
+        List<Author> data = Arrays.asList(deletedAuthor);
 
         return Success.OK("Successfully Deleted Author", data);
     }

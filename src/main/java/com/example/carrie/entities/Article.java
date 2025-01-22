@@ -15,7 +15,7 @@ public class Article {
   private String id;
 
   /*
-   * Title of the Article and it should be minimum 5 or maximum 150 character and
+   * Title of the Article, and it should be minimum 5 or maximum 150 character and
    * should not be empty.
    */
   @NotEmpty(message = "Please provide a title for the Article!")
@@ -24,8 +24,7 @@ public class Article {
 
   /*
    * ID of the Author that the Article belongs to.
-   * This field represents the unique identifier of the author who wrote the
-   * article.
+   * This field links the article to a specific author by its ID.
    */
   private String authorID;
 
@@ -53,7 +52,8 @@ public class Article {
    * characters long.
    * It must not be empty.
    */
-  @Size(min = 5, max = 100, message = "Article description must be at least 5 characters and no more than 100 characters.")
+  // @Size(min = 5, max = 100, message = "Article description must be at least 5
+  // characters and no more than 100 characters.")
   private String description;
 
   /*
@@ -67,5 +67,7 @@ public class Article {
    * This field stores the tags that categorize or describe the article's content.
    */
   private List<String> tags;
+
+  private Image image;
 
 }

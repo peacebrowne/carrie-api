@@ -3,8 +3,10 @@ package com.example.carrie.entities;
 import java.time.LocalDateTime;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class Tag {
 
   /*
