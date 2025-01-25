@@ -48,4 +48,6 @@ public class Image {
    * This field stores the timestamp when the image was last updated.
    */
   private LocalDateTime updatedAt;
+
+
 }

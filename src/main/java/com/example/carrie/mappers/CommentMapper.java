@@ -20,7 +20,7 @@ public interface CommentMapper {
       @Param("start") Long start);
 
   @Select("SELECT COUNT(*) AS total FROM (SELECT * FROM comments WHERE articleID = #{id}::uuid OR parentCommentID = #{id}::uuid)")
-  Long totalComments(@Param("id") String id);
+  Long getTotalComments(@Param("id") String id);
 
   @Select("SELECT * FROM comments WHERE parentCommentID = #{id}::uuid ORDER BY createdAt  LIMIT #{limit} OFFSET #{start}")
   List<Comment> findCommentReplies(@Param("id") String id, @Param("limit") Long limit,

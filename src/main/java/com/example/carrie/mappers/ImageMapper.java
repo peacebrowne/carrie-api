@@ -1,5 +1,7 @@
 package com.example.carrie.mappers;
 
+import java.util.Optional;
+
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -15,7 +17,7 @@ public interface ImageMapper {
   Image findById(@Param("id") String id);
 
   @Select("SELECT * FROM images WHERE targetID = #{targetID}::uuid")
-  Image findImageByTarget(@Param("targetID") String targetID);
+  Optional<Image> findImageByTarget(@Param("targetID") String targetID);
 
   @Select("INSERT INTO images (name, targetID, type, data) VALUES (#{name}, #{targetID}::uuid, #{type}, #{data}) RETURNING *")
   Image addImage(Image image);

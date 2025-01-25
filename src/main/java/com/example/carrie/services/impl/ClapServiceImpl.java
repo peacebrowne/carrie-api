@@ -141,7 +141,7 @@ public class ClapServiceImpl implements ClapService {
       log.error("Validation Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
-      log.error("Internal Server Error while deleting Clap: {}", e.getMessage(), e);
+      log.error("Internal Server Error while getting total Claps: {}", e.getMessage(), e);
       throw new InternalServerError("An unexpected error occurred while getting total Clap counts.");
 
     }
@@ -204,8 +204,6 @@ public class ClapServiceImpl implements ClapService {
   }
 
   private void validateTarget(String targetType, String targetID) {
-    // Validate target ID.
-    validateUUID(targetID, "Invalid Target ID");
 
     if (!Arrays.asList("article", "comment").contains(targetType.toLowerCase())) {
       throw new BadRequest("Invalid target type. Must be 'article' or 'comment'.");

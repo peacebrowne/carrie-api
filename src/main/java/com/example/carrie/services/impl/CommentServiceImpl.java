@@ -62,7 +62,7 @@ public class CommentServiceImpl implements CommentService {
       validateArticle(articleID);
 
       // Get total comments for a particular article by the ID
-      Long total = commentMapper.totalComments(articleID);
+      Long total = commentMapper.getTotalComments(articleID);
 
       // Get all comments associated with an article by ID
       List<Comment> comments = commentMapper.findArticleComments(articleID, limit, start);
@@ -174,7 +174,7 @@ public class CommentServiceImpl implements CommentService {
       getCommentById(parentCommentID);
 
       // Get total replies for a particular comment by the ID
-      Long total = commentMapper.totalComments(parentCommentID);
+      Long total = commentMapper.getTotalComments(parentCommentID);
 
       // Get all replies associated with a comment by ID
       List<Comment> comments = commentMapper.findCommentReplies(parentCommentID, limit, start);

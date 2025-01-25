@@ -53,6 +53,12 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
+    System.out.println("\n\n");
+    System.out.println(start);
+    System.out.println(limit);
+    System.out.println(sort);
+    System.out.println("\n\n");
+
     CustomDto data = articleServiceImpl.getAuthorsArticles(id, sort, limit, start, published);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }

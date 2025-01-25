@@ -68,6 +68,8 @@ public class Article {
    */
   private List<String> tags;
 
-  private Image image;
+  private Long totalClaps;
+
+  private Long totalComments;
 
 }

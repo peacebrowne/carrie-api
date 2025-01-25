@@ -19,13 +19,13 @@ import com.example.carrie.mappers.ImageMapper;
 public class ImageServiceImpl {
 
   private final ImageMapper imageMapper;
-  private static final Logger log = LoggerFactory.getLogger(ImageMapper.class);
+  private static final Logger log = LoggerFactory.getLogger(ImageServiceImpl.class);
 
   public ImageServiceImpl(ImageMapper imageMapper) {
     this.imageMapper = imageMapper;
   }
 
-  protected Image getImageById(String id) {
+  public Image getImageById(String id) {
 
     try {
       return imageMapper.findById(id);
@@ -38,10 +38,12 @@ public class ImageServiceImpl {
 
   }
 
-  protected Image getImageByTarget(String targetID) {
+  public Image getImageByTarget(String targetID) {
 
     try {
-      return imageMapper.findImageByTarget(targetID);
+      Optional<Image> image = imageMapper.findImageByTarget(targetID);
+
+      return image.orElseGet(Image::new);
 
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
