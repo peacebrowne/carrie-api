@@ -55,4 +55,8 @@ public class Comment {
    */
   private LocalDateTime updatedAt;
 
+  private Long totalClaps = 0L;
+
+  private Long totalReplies = 0L;
+
 }

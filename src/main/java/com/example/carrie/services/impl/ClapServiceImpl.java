@@ -18,7 +18,6 @@ import com.example.carrie.entities.Author;
 import com.example.carrie.entities.Clap;
 import com.example.carrie.entities.Comment;
 import com.example.carrie.errors.custom.BadRequest;
-import com.example.carrie.errors.custom.Conflict;
 import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.errors.custom.NotFound;
 import com.example.carrie.mappers.ArticleMapper;
@@ -53,13 +52,13 @@ public class ClapServiceImpl implements ClapService {
 
       validateUUID(id, "Invalid Clap ID");
 
-      Optional<Clap> clap = clapMapper.findById(id);
+      Clap clap = clapMapper.findById(id);
 
-      if (clap.isEmpty()) {
+      if (clap == null) {
         throw new NotFound("Clap does not exist!");
       }
 
-      return clap.get();
+      return clap;
 
     } catch (BadRequest | NotFound e) {
       log.error("Not Found: {}", e.getMessage(), e);
@@ -78,7 +77,7 @@ public class ClapServiceImpl implements ClapService {
       // Validate Clap Data
       validateClap(clap);
 
-      Optional<Clap> existingClaps = null;
+      Clap existingClaps = null;
 
       if (clap.getArticleID() != null) {
         existingClaps = clapMapper.findClapByAuthorAndTarget(clap.getAuthorID(), clap.getArticleID());
@@ -87,14 +86,13 @@ public class ClapServiceImpl implements ClapService {
       }
 
       if (existingClaps != null) {
-        updateClapCount(existingClaps.get());
-        return existingClaps.get();
+        return updateClapCount(existingClaps);
       }
 
       // Save the clap
       return clapMapper.addClap(clap);
 
-    } catch (BadRequest | Conflict | NotFound e) {
+    } catch (BadRequest | NotFound e) {
       log.error("Validation Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
@@ -233,7 +231,7 @@ public class ClapServiceImpl implements ClapService {
     });
   }
 
-  private void updateClapCount(Clap existingClap) {
+  private Clap updateClapCount(Clap existingClap) {
 
     try {
 
@@ -247,6 +245,7 @@ public class ClapServiceImpl implements ClapService {
 
       // Update the Clap count
       clapMapper.updateClapCount(existingClap.getId(), currentCount);
+      return existingClap;
 
     } catch (BadRequest | NotFound e) {
       log.error("Validation Error: {}", e.getMessage(), e);

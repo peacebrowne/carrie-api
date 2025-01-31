@@ -68,8 +68,8 @@ public class Article {
    */
   private List<String> tags;
 
-  private Long totalClaps;
+  private Long totalClaps = 0L;
 
-  private Long totalComments;
+  private Long totalComments = 0L;
 
 }

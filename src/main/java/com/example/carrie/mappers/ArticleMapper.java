@@ -13,11 +13,14 @@ public interface ArticleMapper {
         @Select("SELECT * FROM articles WHERE title =#{title}")
         List<Article> findByTitle(@Param("title") String title);
 
-        @Select("SELECT * FROM articles WHERE id = #{id}::uuid")
+        @Select("SELECT a.*, (SELECT COUNT(*) FROM comments WHERE comments.articleID = a.id) AS totalComments, (SELECT SUM(claps.count) FROM claps WHERE claps.articleID = a.id) AS totalClaps FROM articles a WHERE id = #{id}::uuid")
         Optional<Article> findById(@Param("id") String id);
 
         @Select("<script> " +
-                        "SELECT * FROM articles a " +
+                        "SELECT a.*, " +
+                        "(SELECT COUNT(*) FROM comments WHERE comments.articleID = a.id) AS totalComments, " +
+                        "(SELECT SUM(claps.count) FROM claps WHERE claps.articleID = a.id) AS totalClaps " +
+                        "FROM articles a" +
                         "<if test='published != null and published != \"\"'>" +
                         "  WHERE a.isPublished = #{published}" +
                         "</if>" +
@@ -76,7 +79,10 @@ public interface ArticleMapper {
                         @Param("published") Boolean published);
 
         @Select("<script> " +
-                        "SELECT * FROM articles a " +
+                        "SELECT a.*, " +
+                        "(SELECT COUNT(*) FROM comments WHERE comments.articleID = a.id) AS totalComments, " +
+                        "(SELECT SUM(claps.count) FROM claps WHERE claps.articleID = a.id) AS totalClaps " +
+                        "FROM articles a" +
                         "   <where> " +
                         "        a.authorID = #{authorID}::uuid " +
                         "      <if test='published != null'> " +
@@ -105,7 +111,9 @@ public interface ArticleMapper {
         Article addArticle(Article article);
 
         @Select("<script> " +
-                        "SELECT DISTINCT a.* " +
+                        "SELECT DISTINCT a.*, " +
+                        "(SELECT COUNT(*) FROM comments WHERE comments.articleID = a.id) AS totalComments, " +
+                        "(SELECT SUM(claps.count) FROM claps WHERE claps.articleID = a.id) AS totalClaps " +
                         "FROM articles a " +
                         "LEFT JOIN article_tags at ON a.id = at.articleID " +
                         "LEFT JOIN tags t ON at.tagID = t.id " +

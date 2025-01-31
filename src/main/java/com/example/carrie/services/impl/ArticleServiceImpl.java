@@ -7,8 +7,6 @@ import com.example.carrie.errors.custom.NotFound;
 import com.example.carrie.mappers.ArticleMapper;
 import com.example.carrie.mappers.ArticleTagMapper;
 import com.example.carrie.mappers.AuthorMapper;
-import com.example.carrie.mappers.ClapMapper;
-import com.example.carrie.mappers.CommentMapper;
 import com.example.carrie.mappers.ImageMapper;
 import com.example.carrie.mappers.TagMapper;
 import com.example.carrie.services.ArticleService;
@@ -20,11 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.carrie.dto.ClapDto;
 import com.example.carrie.dto.CustomDto;
 import com.example.carrie.entities.Article;
 import com.example.carrie.entities.Author;
-import com.example.carrie.entities.Image;
 import com.example.carrie.entities.Tag;
 
 import java.time.LocalDateTime;
@@ -37,26 +33,20 @@ import java.util.Optional;
 public class ArticleServiceImpl extends ImageServiceImpl implements ArticleService {
   private final ArticleMapper articleMapper;
   private final AuthorMapper authorMapper;
-  private final CommentMapper commentMapper;
   private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
 
   private TagServiceImpl tagServiceImpl = null;
-  private ClapServiceImpl clapServiceImpl = null;
 
   public ArticleServiceImpl(
       ArticleMapper articleMapper,
       AuthorMapper authorMapper,
       TagMapper tagMapper,
       ArticleTagMapper articleTagMapper,
-      ImageMapper imageMapper,
-      ClapMapper clapMapper,
-      CommentMapper commentMapper) {
+      ImageMapper imageMapper) {
     super(imageMapper);
     this.articleMapper = articleMapper;
     this.authorMapper = authorMapper;
-    this.commentMapper = commentMapper;
     tagServiceImpl = new TagServiceImpl(tagMapper, articleTagMapper);
-    clapServiceImpl = new ClapServiceImpl(commentMapper, articleMapper, authorMapper, clapMapper);
   }
 
   @Override
@@ -75,8 +65,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
       // Set the retrieved tags to the article
       article.setTags(articleTags);
-      article.setTotalClaps(getTotalClaps("article", id));
-      article.setTotalComments(getTotalComments(id));
 
       // Return the article with its associated tags
       return article;
@@ -107,8 +95,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       // Add related tags to articles
       articles.forEach(article -> {
         article.setTags(getArticleTags(article.getId()));
-        article.setTotalClaps(getTotalClaps("article", article.getId()));
-        article.setTotalComments(getTotalComments(article.getId()));
       });
 
       // Encapsulate the total count and the list of articles
@@ -189,8 +175,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       // Add related tags to articles
       articles.forEach(article -> {
         article.setTags(getArticleTags(article.getId()));
-        article.setTotalClaps(getTotalClaps("article", article.getId()));
-        article.setTotalComments(getTotalComments(article.getId()));
       });
 
       // Encapsulate the total count and the list of an Author's article
@@ -296,15 +280,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
     }
 
-  }
-
-  private Long getTotalClaps(String targetType, String id) {
-    ClapDto claps = clapServiceImpl.getTotalClaps(targetType, id);
-    return claps.getTotal();
-  }
-
-  private Long getTotalComments(String id) {
-    return commentMapper.getTotalComments(id);
   }
 
   private List<String> getArticleTags(String id) {

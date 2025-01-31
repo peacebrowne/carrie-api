@@ -42,7 +42,7 @@ public class ArticleController {
   @GetMapping("/{id}")
   public ResponseEntity<?> getArticleById(@PathVariable String id) {
 
-    List<Article> data = Collections.singletonList(articleServiceImpl.getArticleById(id));
+    Article data = articleServiceImpl.getArticleById(id);
     return Success.OK("Successfully Retrieved single Article.", data);
   }
 
@@ -52,12 +52,6 @@ public class ArticleController {
       @RequestParam(required = false) Boolean published,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
-
-    System.out.println("\n\n");
-    System.out.println(start);
-    System.out.println(limit);
-    System.out.println(sort);
-    System.out.println("\n\n");
 
     CustomDto data = articleServiceImpl.getAuthorsArticles(id, sort, limit, start, published);
     return Success.OK("Successfully Retrieved Author's Articles.", data);

@@ -66,9 +66,15 @@ public class Author {
     private String gender;
 
     /*
-     * Timestamp when the comment was created.
-     * This field stores the date and time when the comment was created.
+     * Local date and time the Image was created.
+     * This field records the timestamp when the image was first created.
      */
     private LocalDateTime createdAt;
+
+    /*
+     * Local date and time the Image was updated.
+     * This field stores the timestamp when the image was last updated.
+     */
+    private LocalDateTime updatedAt;
 
 }

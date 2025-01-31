@@ -15,7 +15,7 @@ public interface CommentMapper {
   @Select("SELECT * FROM comments WHERE id = #{id}::uuid")
   Optional<Comment> findById(@Param("id") String id);
 
-  @Select("SELECT * FROM comments WHERE articleID = #{articleID}::uuid ORDER BY createdAt LIMIT #{limit} OFFSET #{start}")
+  @Select("SELECT c.*, (SELECT COUNT(*) FROM comments WHERE parentCommentID = c.id) AS totalReplies, (SELECT SUM(claps.count) FROM claps WHERE commentID = c.id) AS totalClaps FROM comments c WHERE c.articleID = #{articleID}::uuid ORDER BY createdAt LIMIT #{limit} OFFSET #{start}")
   List<Comment> findArticleComments(@Param("articleID") String articleID, @Param("limit") Long limit,
       @Param("start") Long start);
 

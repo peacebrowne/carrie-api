@@ -21,7 +21,7 @@ import com.example.carrie.mappers.TagMapper;
 public class TagServiceImpl {
   private final TagMapper tagMapper;
   private final ArticleTagMapper articleTagMapper;
-  private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(TagServiceImpl.class);
 
   public TagServiceImpl(TagMapper tagMapper, ArticleTagMapper articleTagMapper) {
     this.tagMapper = tagMapper;
