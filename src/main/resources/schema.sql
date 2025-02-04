@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS articles (
 -- Create the comments table
 CREATE TABLE IF NOT EXISTS comments(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    articleID UUID NOT NULL,
+    articleID UUID,
     authorID UUID NOT NULL,
     parentCommentID UUID;
     content TEXT NOT NULL,

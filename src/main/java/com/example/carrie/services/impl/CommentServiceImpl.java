@@ -55,7 +55,7 @@ public class CommentServiceImpl implements CommentService {
   }
 
   @Override
-  public CustomDto getArticleComments(String articleID, Long limit, Long start) {
+  public CustomDto getArticleComments(String articleID) {
     try {
 
       // Validate essential fields
@@ -65,7 +65,7 @@ public class CommentServiceImpl implements CommentService {
       Long total = commentMapper.getTotalComments(articleID);
 
       // Get all comments associated with an article by ID
-      List<Comment> comments = commentMapper.findArticleComments(articleID, limit, start);
+      List<Comment> comments = commentMapper.findArticleComments(articleID);
 
       // Encapsulate the total count and the list of comments
       return new CustomDto(total, comments);
@@ -90,9 +90,13 @@ public class CommentServiceImpl implements CommentService {
         validateComment(comment.getParentCommentID(), "Invalid Parent Comment ID");
       });
 
+      // Validate parent comment ID if present
+      Optional.ofNullable(comment.getArticleID()).ifPresent(articleID -> {
+        validateArticle(comment.getArticleID());
+      });
+
       // Ensure the author and article exist
       validateAuthor(comment.getAuthorID());
-      validateArticle(comment.getArticleID());
 
       // Save the comment
       Comment createdComment = commentMapper.addComment(comment);
@@ -166,7 +170,7 @@ public class CommentServiceImpl implements CommentService {
   }
 
   @Override
-  public CustomDto getCommentReplies(String parentCommentID, Long limit, Long start) {
+  public CustomDto getCommentReplies(String parentCommentID) {
 
     try {
 
@@ -177,7 +181,7 @@ public class CommentServiceImpl implements CommentService {
       Long total = commentMapper.getTotalComments(parentCommentID);
 
       // Get all replies associated with a comment by ID
-      List<Comment> comments = commentMapper.findCommentReplies(parentCommentID, limit, start);
+      List<Comment> comments = commentMapper.findCommentReplies(parentCommentID);
 
       // Encapsulate the total count and the list of comments
       CustomDto data = new CustomDto(total, comments);

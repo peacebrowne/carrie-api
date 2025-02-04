@@ -35,19 +35,15 @@ public class CommentController {
   }
 
   @GetMapping("/articles/{id}")
-  public ResponseEntity<?> getArticleComments(@PathVariable String id,
-      @RequestParam(required = false, defaultValue = "10") Long limit,
-      @RequestParam(required = false, defaultValue = "0") Long start) {
-    CustomDto data = commentServiceImpl.getArticleComments(id, limit, start);
+  public ResponseEntity<?> getArticleComments(@PathVariable String id) {
+    CustomDto data = commentServiceImpl.getArticleComments(id);
 
     return Success.OK("Successfully Retrieved Article's comments", data);
   }
 
   @GetMapping("/replies/{id}")
-  public ResponseEntity<?> getCommentReplies(@PathVariable String id,
-      @RequestParam(required = false, defaultValue = "10") Long limit,
-      @RequestParam(required = false, defaultValue = "0") Long start) {
-    CustomDto data = commentServiceImpl.getCommentReplies(id, limit, start);
+  public ResponseEntity<?> getCommentReplies(@PathVariable String id) {
+    CustomDto data = commentServiceImpl.getCommentReplies(id);
 
     return Success.OK("Successfully Retrieved Comment's replies", data);
   }
