@@ -187,8 +187,8 @@ public class CommentServiceImpl implements CommentService {
       CustomDto data = new CustomDto(total, comments);
       return data;
 
-    } catch (NotFound e) {
-      log.error("Not Found: {}", e.getMessage(), e);
+    } catch (BadRequest | NotFound e) {
+      log.error("Validation Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
