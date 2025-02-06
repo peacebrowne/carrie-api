@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS authors (
     gender TEXT,
     password_hash TEXT,
     password_salt TEXT,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create the articles table
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS articles (
     isPublished BOOLEAN DEFAULT false,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (authorID) REFERENCES authors(id) ON DELETE CASCADE
+    FOREIGN KEY (authorID) REFERENCES authors(id) ON DELETE CASCADE,
     CONSTRAINT unique_author_article UNIQUE (authorID, title)
 );
 
@@ -37,12 +37,12 @@ CREATE TABLE IF NOT EXISTS comments(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     articleID UUID,
     authorID UUID NOT NULL,
-    parentCommentID UUID;
+    parentCommentID UUID,
     content TEXT NOT NULL,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE
-    FOREIGN KEY(authorID) REFERENCES authorID(id) ON DELETE CASCADE
+    FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE,
+    FOREIGN KEY(authorID) REFERENCES authors(id) ON DELETE CASCADE,
     FOREIGN KEY(parentCommentID) REFERENCES comments(id) ON DELETE CASCADE
 );
 
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS claps(
     FOREIGN KEY(commentID) REFERENCES comments(id) ON DELETE CASCADE,
     UNIQUE(authorID,articleID),
     UNIQUE(authorID,commentID)
-)
+);
 
 CREATE TABLE IF NOT EXISTS images(
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -86,4 +86,4 @@ CREATE TABLE IF NOT EXISTS images(
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE,
     FOREIGN KEY(authorID) REFERENCES authors(id) ON DELETE CASCADE
-)
+);
