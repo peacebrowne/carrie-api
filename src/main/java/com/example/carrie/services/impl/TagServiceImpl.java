@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.carrie.entities.ArticleTag;
-import com.example.carrie.entities.Tag;
+import com.example.carrie.models.ArticleTag;
+import com.example.carrie.models.Tag;
 import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.mappers.ArticleTagMapper;
 import com.example.carrie.mappers.TagMapper;

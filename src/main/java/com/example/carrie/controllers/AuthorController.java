@@ -1,6 +1,6 @@
 package com.example.carrie.controllers;
 
-import com.example.carrie.entities.Author;
+import com.example.carrie.models.Author;
 import com.example.carrie.services.impl.AuthorServiceImpl;
 import com.example.carrie.success.Success;
 
@@ -39,19 +39,6 @@ public class AuthorController {
 
         List<Author> data = authorServiceImpl.getAllAuthors(sort, limit, start);
         return Success.OK("Successfully Retrieved all Authors.", data);
-    }
-
-    @PostMapping
-    public ResponseEntity<?> addAuthor(@Valid @RequestBody(required = true) Author author, BindingResult result) {
-
-        if (result.hasErrors()) {
-            throw new BadRequest(result.getAllErrors().get(0).getDefaultMessage());
-        }
-
-        Author createdAuthor = authorServiceImpl.addAuthor(author);
-        List<Author> data = Collections.singletonList(createdAuthor);
-
-        return Success.CREATED("Successfully created Author.", data);
     }
 
     @PutMapping("/{id}")

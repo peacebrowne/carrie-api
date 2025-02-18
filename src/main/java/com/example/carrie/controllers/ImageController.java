@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.example.carrie.entities.Image;
+import com.example.carrie.models.Image;
 import com.example.carrie.services.impl.ImageServiceImpl;
 
 import org.springframework.web.bind.annotation.GetMapping;

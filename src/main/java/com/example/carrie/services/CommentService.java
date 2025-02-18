@@ -1,7 +1,7 @@
 package com.example.carrie.services;
 
 import com.example.carrie.dto.CustomDto;
-import com.example.carrie.entities.Comment;
+import com.example.carrie.models.Comment;
 
 public interface CommentService {
   public Comment getCommentById(String id);

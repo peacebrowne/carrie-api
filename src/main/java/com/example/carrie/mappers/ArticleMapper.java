@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.apache.ibatis.annotations.*;
 
-import com.example.carrie.entities.Article;
+import com.example.carrie.models.Article;
 
 @Mapper
 public interface ArticleMapper {

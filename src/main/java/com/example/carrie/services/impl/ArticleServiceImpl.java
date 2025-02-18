@@ -19,9 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.carrie.dto.CustomDto;
-import com.example.carrie.entities.Article;
-import com.example.carrie.entities.Author;
-import com.example.carrie.entities.Tag;
+import com.example.carrie.models.Article;
+import com.example.carrie.models.Author;
+import com.example.carrie.models.Tag;
 
 import java.time.LocalDateTime;
 import java.util.List;

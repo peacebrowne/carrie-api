@@ -1,8 +1,11 @@
-package com.example.carrie.entities;
+package com.example.carrie.models;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import jakarta.validation.constraints.Email;
@@ -13,6 +16,9 @@ import lombok.Data;
 
 @Data
 public class Author {
+
+//    @Getter(AccessLevel.NONE)
+    private String password;
 
     /*
      * ID of the Comment.

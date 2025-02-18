@@ -13,10 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.carrie.dto.ClapDto;
 import com.example.carrie.dto.ClapValueDto;
-import com.example.carrie.entities.Article;
-import com.example.carrie.entities.Author;
-import com.example.carrie.entities.Clap;
-import com.example.carrie.entities.Comment;
+import com.example.carrie.models.Article;
+import com.example.carrie.models.Author;
+import com.example.carrie.models.Clap;
+import com.example.carrie.models.Comment;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.errors.custom.NotFound;

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.carrie.entities.Image;
+import com.example.carrie.models.Image;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.mappers.ImageMapper;

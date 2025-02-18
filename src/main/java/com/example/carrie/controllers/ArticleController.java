@@ -12,7 +12,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.carrie.dto.CustomDto;
-import com.example.carrie.entities.Article;
+import com.example.carrie.models.Article;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.services.impl.ArticleServiceImpl;
 import org.springframework.web.multipart.MultipartFile;

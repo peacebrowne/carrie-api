@@ -3,7 +3,7 @@ package com.example.carrie.services;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.carrie.dto.CustomDto;
-import com.example.carrie.entities.Article;
+import com.example.carrie.models.Article;
 
 public interface ArticleService {
   public Article getArticleById(String id);

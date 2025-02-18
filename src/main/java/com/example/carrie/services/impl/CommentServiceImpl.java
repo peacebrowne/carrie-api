@@ -16,9 +16,9 @@ import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.mappers.ArticleMapper;
 import com.example.carrie.mappers.CommentMapper;
 import com.example.carrie.dto.CustomDto;
-import com.example.carrie.entities.Article;
-import com.example.carrie.entities.Author;
-import com.example.carrie.entities.Comment;
+import com.example.carrie.models.Article;
+import com.example.carrie.models.Author;
+import com.example.carrie.models.Comment;
 import com.example.carrie.services.CommentService;
 import com.example.carrie.utils.validations.UUIDValidator;
 

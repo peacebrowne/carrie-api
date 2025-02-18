@@ -1,7 +1,7 @@
 package com.example.carrie.services;
 
 import com.example.carrie.dto.ClapDto;
-import com.example.carrie.entities.Clap;
+import com.example.carrie.models.Clap;
 
 public interface ClapService {
 

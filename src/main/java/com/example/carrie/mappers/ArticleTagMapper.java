@@ -8,8 +8,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-import com.example.carrie.entities.ArticleTag;
-import com.example.carrie.entities.Tag;
+import com.example.carrie.models.ArticleTag;
+import com.example.carrie.models.Tag;
 
 @Mapper
 public interface ArticleTagMapper {

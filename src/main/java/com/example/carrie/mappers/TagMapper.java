@@ -4,7 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-import com.example.carrie.entities.Tag;
+import com.example.carrie.models.Tag;
 
 @Mapper
 public interface TagMapper {

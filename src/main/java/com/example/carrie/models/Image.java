@@ -1,4 +1,4 @@
-package com.example.carrie.entities;
+package com.example.carrie.models;
 
 import java.time.LocalDateTime;
 

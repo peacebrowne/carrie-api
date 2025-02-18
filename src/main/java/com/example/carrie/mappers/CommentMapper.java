@@ -3,7 +3,7 @@ package com.example.carrie.mappers;
 import java.util.List;
 import java.util.Optional;
 import org.apache.ibatis.annotations.*; 
-import com.example.carrie.entities.Comment;
+import com.example.carrie.models.Comment;
 
 @Mapper
 public interface CommentMapper {

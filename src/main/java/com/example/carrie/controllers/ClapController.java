@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.carrie.success.Success;
 import com.example.carrie.dto.ClapDto;
-import com.example.carrie.entities.Clap;
+import com.example.carrie.models.Clap;
 import com.example.carrie.services.impl.ClapServiceImpl;
 
 import org.springframework.http.ResponseEntity;

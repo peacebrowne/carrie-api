@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import com.example.carrie.entities.Clap;
+import com.example.carrie.models.Clap;
 
 @Mapper
 public interface ClapMapper {

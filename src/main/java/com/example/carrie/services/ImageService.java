@@ -1,6 +1,6 @@
 package com.example.carrie.services;
 
-import com.example.carrie.entities.Image;
+import com.example.carrie.models.Image;
 
 public interface ImageService {
 

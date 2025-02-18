@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.carrie.dto.CustomDto;
-import com.example.carrie.entities.Comment;
+import com.example.carrie.models.Comment;
 import com.example.carrie.success.Success;
 import com.example.carrie.errors.custom.BadRequest;
 
