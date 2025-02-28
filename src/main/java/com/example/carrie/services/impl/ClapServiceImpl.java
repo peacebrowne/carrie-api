@@ -71,7 +71,7 @@ public class ClapServiceImpl implements ClapService {
   }
 
   @Override
-  public Clap addClap(Clap clap) {
+  public Clap addClap(Clap clap, String action) {
     try {
 
       // Validate Clap Data
@@ -86,7 +86,7 @@ public class ClapServiceImpl implements ClapService {
       }
 
       if (existingClaps != null) {
-        return updateClapCount(existingClaps);
+        return updateClapCount(existingClaps, action);
       }
 
       // Save the clap
@@ -130,7 +130,7 @@ public class ClapServiceImpl implements ClapService {
       Long total = calculateTotalClaps(claps);
 
       List<ClapValueDto> clapsByAuthors = claps.stream().map(clap -> {
-        return new ClapValueDto(clap.getAuthorID(), clap.getCount());
+        return new ClapValueDto(clap.getAuthorID(), clap.getLikes());
       }).collect(Collectors.toList());
 
       return new ClapDto(targetType, targetID, total, clapsByAuthors);
@@ -209,42 +209,44 @@ public class ClapServiceImpl implements ClapService {
 
     // Checks if the request is for an article or a comment.
     switch (targetType.toLowerCase()) {
-      case "article":
-        validateArticle(targetID);
-        break;
-      case "comment":
-        validateComment(targetID);
-        break;
+      case "article" -> validateArticle(targetID);
+      case "comment" -> validateComment(targetID);
     }
   }
 
   private Long calculateTotalClaps(List<Clap> claps) {
 
     // Iterate through the article claps
-    return claps.stream().map(clap -> {
-
       // Returns the total clap count of each clap
-      return clap.getCount();
-    }).reduce((long) 0, (result, element) -> {
-
-      return result + element;
-    });
+      return claps.stream().map(Clap::getLikes).reduce((long) 0, Long::sum);
   }
 
-  private Clap updateClapCount(Clap existingClap) {
+  private Clap updateClapCount(Clap existingClap, String target) {
 
     try {
 
+      validateClapAction(target);
+
       // Update the Clap count based on the input``
-      Long currentCount = existingClap.getCount() != null ? existingClap.getCount() : 0;
-      existingClap.setCount(++currentCount);
+      long currentCount = 0L;
+
+      switch (target){
+        case "like" -> {
+          currentCount = existingClap.getLikes() != null ? existingClap.getLikes() : 0;
+          existingClap.setLikes(++currentCount);
+        }
+        case "dislike" -> {
+          currentCount = existingClap.getLikes() != null ? existingClap.getDislikes(): 0;
+          existingClap.setDislikes(++currentCount);
+        }
+      }
 
       // Set the current timestamp as the updated date for the article
       LocalDateTime currentDate = LocalDateTime.now();
       existingClap.setUpdatedAt(currentDate);
 
       // Update the Clap count
-      clapMapper.updateClapCount(existingClap.getId(), currentCount);
+      clapMapper.updateClapCount(existingClap.getId(),  currentCount, target);
       return existingClap;
 
     } catch (BadRequest | NotFound e) {
@@ -255,5 +257,12 @@ public class ClapServiceImpl implements ClapService {
       throw new InternalServerError("An unexpected error occurred while updating Clap count.");
     }
   }
+
+  protected void validateClapAction(String action){
+    if (!Arrays.asList("like", "dislike").contains(action.toLowerCase())){
+      throw new BadRequest("Action should either be 'like' or 'dislike'");
+    };
+  }
+
 
 }

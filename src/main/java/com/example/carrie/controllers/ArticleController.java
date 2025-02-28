@@ -31,11 +31,15 @@ public class ArticleController {
   @GetMapping
   public ResponseEntity<?> getAllArticles(
       @RequestParam(required = false) String sort,
-      @RequestParam(required = false) Boolean published,
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String startDate,
+      @RequestParam(required = false) String endDate,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomDto data = articleServiceImpl.getAllArticles(sort, limit, start, published);
+    CustomDto data = articleServiceImpl.getAllArticles(
+            sort, limit, start, status, startDate, endDate
+    );
     return Success.OK("Successfully Retrieved all Articles.", data);
   }
 
@@ -49,11 +53,15 @@ public class ArticleController {
   @GetMapping("/authors/{id}")
   public ResponseEntity<?> getAuthorArticles(@PathVariable String id,
       @RequestParam(required = false) String sort,
-      @RequestParam(required = false) Boolean published,
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String startDate,
+      @RequestParam(required = false) String endDate,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomDto data = articleServiceImpl.getAuthorsArticles(id, sort, limit, start, published);
+    CustomDto data = articleServiceImpl.getAuthorsArticles(
+            id, sort, limit, start, status, startDate, endDate
+    );
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 
@@ -61,21 +69,31 @@ public class ArticleController {
   public ResponseEntity<?> searchAuthorArticles(@PathVariable String id,
       @RequestParam String term,
       @RequestParam(required = false) String sort,
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String startDate,
+      @RequestParam(required = false) String endDate,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomDto data = articleServiceImpl.searchArticles(term, id, sort, limit, start);
+    CustomDto data = articleServiceImpl.searchArticles(
+            term, id, sort, limit, start, status, startDate, endDate
+    );
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 
   @GetMapping("/search")
   public ResponseEntity<?> searchArticles(
       @RequestParam String term,
+      @RequestParam(required = false) String status,
       @RequestParam(required = false) String sort,
+      @RequestParam(required = false) String startDate,
+      @RequestParam(required = false) String endDate,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
-    CustomDto data = articleServiceImpl.searchArticles(term, null, sort, limit, start);
+    CustomDto data = articleServiceImpl.searchArticles(
+            term, null, sort, limit, start, status, startDate, endDate
+            );
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 

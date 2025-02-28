@@ -3,6 +3,7 @@ package com.example.carrie.models;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -60,7 +61,8 @@ public class Article {
    * Indicates whether the article is published or not.
    * This boolean flag determines if the article is visible to the public or not
    */
-  private Boolean isPublished;
+  @FutureOrPresent(message = "Published date should be now or in the future")
+  private LocalDateTime publishedAt;
 
   /*
    * List of associated Tags that the Article belongs to.
@@ -68,8 +70,12 @@ public class Article {
    */
   private List<String> tags;
 
-  private Long totalClaps = 0L;
+  private Long totalLikes = 0L;
+
+  private Long totalDislikes = 0L;
 
   private Long totalComments = 0L;
 
+  @NotEmpty(message = "Invalid Article status. It should be one of 'Draft, Pending, Publish'")
+  private String status;
 }

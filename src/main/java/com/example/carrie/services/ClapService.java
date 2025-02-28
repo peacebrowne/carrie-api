@@ -7,7 +7,7 @@ public interface ClapService {
 
   public Clap findById(String id);
 
-  public Clap addClap(Clap clap);
+  public Clap addClap(Clap clap, String action);
 
   public Clap deleteClap(String id);
 

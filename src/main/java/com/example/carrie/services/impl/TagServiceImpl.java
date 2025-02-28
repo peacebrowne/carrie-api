@@ -48,7 +48,8 @@ public class TagServiceImpl {
          * If the tag does not exist, add it to the database and then add it to the
          * list. Otherwise, add the existing tag to the list.
          */
-        tags.add(existingTag.isEmpty() ? tagMapper.addTags(newTag) : existingTag.get());
+        tags.add(existingTag.orElseGet(() -> tagMapper.addTags(newTag)));
+
       }
 
       return tags;
@@ -66,10 +67,8 @@ public class TagServiceImpl {
     try {
       // Iterate over the provided tag names
       tags.forEach(tag -> {
-        /**
-         * Create a new instance of ArticleTag to establish the relationship between
-         * an article and a tag
-         */
+
+        // Create a new instance of ArticleTag to establish the relationship between an article and a tag
         ArticleTag articleTag = new ArticleTag();
 
         // Set the article ID for the relationship
@@ -96,14 +95,9 @@ public class TagServiceImpl {
   protected List<String> getArticleTags(String articleID) {
     try {
 
-      /**
-       * Iterate through the list of article objects and return a list of names for
-       * each article
-       */
-      return articleTagMapper.getArticleTags(articleID).stream().map(tag -> {
+        // Iterate through the list of article objects and return a list of names for each article
         // Return the tag name
-        return tag.getName();
-      }).collect(Collectors.toList());
+        return articleTagMapper.getArticleTags(articleID).stream().map(Tag::getName).collect(Collectors.toList());
 
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -121,7 +115,7 @@ public class TagServiceImpl {
     // Check if the tags to be updated are provided.
     if (tagsToUpdate.isPresent()) {
 
-      // Add the tags if do not exist
+      // Add the tags if id does not exist
       List<Tag> updatedTags = addTags(tagsToUpdate.get());
 
       /*

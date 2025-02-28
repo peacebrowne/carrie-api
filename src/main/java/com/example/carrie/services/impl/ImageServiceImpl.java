@@ -54,7 +54,7 @@ public class ImageServiceImpl {
 
   }
 
-  protected Image addImage(MultipartFile image, String targetID, String targetType) throws IOException {
+  protected void addImage(MultipartFile image, String targetID, String targetType) throws IOException {
     try {
 
       validateImage(image.getContentType(), targetType);
@@ -64,9 +64,7 @@ public class ImageServiceImpl {
       img.setName(image.getOriginalFilename());
       img.setData(image.getBytes());
       img.setType(image.getContentType());
-      Image createdImage = imageMapper.addImage(img);
-
-      return createdImage;
+      imageMapper.addImage(img);
 
     } catch (BadRequest | IOException e) {
       log.error("Bad image format: {}", e.getMessage(), e);

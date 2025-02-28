@@ -1,5 +1,6 @@
 package com.example.carrie.services.impl;
 
+import com.example.carrie.enumerators.ArticleStatus;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.errors.custom.Conflict;
 import com.example.carrie.errors.custom.InternalServerError;
@@ -24,16 +25,15 @@ import com.example.carrie.models.Author;
 import com.example.carrie.models.Tag;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 @Transactional
 public class ArticleServiceImpl extends ImageServiceImpl implements ArticleService {
   private final ArticleMapper articleMapper;
   private final AuthorMapper authorMapper;
-  private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(ArticleServiceImpl.class);
 
   private TagServiceImpl tagServiceImpl = null;
 
@@ -54,10 +54,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
     try {
 
-      /*
-       * Validate the existence of the article using its ID and return the article if
-       * it exists.
-       */
+      // Validate the existence of the article using its ID and return the article if it exists.
       Article article = validateArticle(id);
 
       // Retrieve the list of tags associated with the article
@@ -76,21 +73,33 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
           "An unexpected error occurred while fetching an Article.");
-
     }
 
   }
 
   @Override
-  public CustomDto getAllArticles(String sort, Long limit, Long start, Boolean published) {
+  public CustomDto getAllArticles(
+          String sort,
+          Long limit,
+          Long start,
+          String status,
+          String startDate,
+          String endDate
+  ) {
 
     try {
 
       // Get total count for all articles
-      Long total = articleMapper.totalArticles(null, null, sort, published);
+      Long total = articleMapper.totalArticles(
+              null, null, sort, status,
+              formatDateTime(startDate), formatDateTime(endDate)
+      );
 
       // Get all articles
-      List<Article> articles = articleMapper.findAll(sort, limit, start, published);
+      List<Article> articles = articleMapper.findAll(
+              sort, limit, start, status,
+              formatDateTime(startDate), formatDateTime(endDate)
+      );
 
       // Add related tags to articles
       articles.forEach(article -> {
@@ -98,7 +107,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       });
 
       // Encapsulate the total count and the list of articles
-
       return new CustomDto(total, articles);
 
     } catch (Exception e) {
@@ -118,13 +126,13 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
       // Create tag if not exists.
       List<Tag> tags = tagServiceImpl.addTags(tagNames);
-      // List<Tag> tags = addTags(tagNames);
 
       // Retrieve all existing articles with the same Title
       List<Article> existingArticles = articleMapper.findByTitle(title);
 
       // Validate Author
       validateAuthor(article.getAuthorID());
+      validateArticleStatus(article.getStatus());
 
       // Checks if an article with given Title and Author already exist.
       Optional.ofNullable(existingArticles).ifPresent((articles) -> articles.forEach((a) -> {
@@ -159,18 +167,32 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   }
 
   @Override
-  public CustomDto getAuthorsArticles(String authorID, String sort, Long limit, Long start, Boolean published) {
-
+  public CustomDto getAuthorsArticles(
+          String authorID,
+          String sort,
+          Long limit,
+          Long start,
+          String status,
+          String startDate,
+          String endDate
+  )
+  {
     try {
 
       // Validate Author
       validateAuthor(authorID);
 
       // Get total articles for a particular author by the ID
-      Long total = articleMapper.totalArticles(null, authorID, sort, published);
+      Long total = articleMapper.totalArticles(
+              null, authorID, sort, status,
+              formatDateTime(startDate), formatDateTime(endDate)
+      );
 
       // Get all articles associated with an author by ID
-      List<Article> articles = articleMapper.findAuthorsArticles(authorID, sort, limit, start, published);
+      List<Article> articles = articleMapper.findAuthorsArticles(
+              authorID, sort, limit, start, status,
+              formatDateTime(startDate), formatDateTime(endDate)
+      );
 
       // Add related tags to articles
       articles.forEach(article -> {
@@ -187,7 +209,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
           "An unexpected error occurred while fetching an Author's Article.");
-
     }
 
   }
@@ -200,11 +221,12 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       Article existingArticle = getArticleById(id);
 
       // Update the article's data if a new value is provided
-      Optional.ofNullable(article.getContent()).ifPresent(content -> existingArticle.setContent(content));
-      Optional.ofNullable(article.getTitle()).ifPresent(title -> existingArticle.setTitle(title));
-      Optional.ofNullable(article.getIsPublished()).ifPresent(published -> existingArticle.setIsPublished(published));
+      Optional.ofNullable(article.getContent()).ifPresent(existingArticle::setContent);
+      Optional.ofNullable(article.getTitle()).ifPresent(existingArticle::setTitle);
+      Optional.ofNullable(article.getStatus()).ifPresent(existingArticle::setStatus);
+      Optional.ofNullable(article.getPublishedAt()).ifPresent(existingArticle::setPublishedAt);
       Optional.ofNullable(article.getDescription())
-          .ifPresent(description -> existingArticle.setDescription(description));
+          .ifPresent(existingArticle::setDescription);
 
       // Set the current timestamp as the updated date for the article
       LocalDateTime currentDate = LocalDateTime.now();
@@ -254,14 +276,29 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   }
 
   @Override
-  public CustomDto searchArticles(String term, String authorID, String sort, Long limit, Long start) {
+  public CustomDto searchArticles(
+          String term,
+          String authorID,
+          String sort,
+          Long limit,
+          Long start,
+          String status,
+          String startDate,
+          String endDate
+  )
+  {
     try {
       if (authorID != null && !UUIDValidator.isValidUUID(authorID))
         throw new BadRequest("Invalid Author ID");
 
-      Long total = articleMapper.totalArticles(term, authorID, sort, null);
+      Long total = articleMapper.totalArticles(
+              term, authorID, sort, status,
+              formatDateTime(startDate), formatDateTime(endDate)
+      );
 
-      List<Article> articles = articleMapper.search(term, authorID, sort, limit, start);
+      List<Article> articles = articleMapper.search(
+              term, authorID, sort, limit, start, status,
+              formatDateTime(startDate), formatDateTime(endDate));
 
       // Add related tags to articles
       articles.forEach(article -> {
@@ -277,7 +314,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
           "An unexpected error occurred while searching for an Article.");
-
     }
 
   }
@@ -313,5 +349,20 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     }
 
     return article.get();
+  }
+
+  private void validateArticleStatus(String status) {
+      ArticleStatus articleStatus = ArticleStatus.valueOf(status.toUpperCase());
+
+      if (!Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.PENDING, ArticleStatus.PUBLISHED).contains(articleStatus)) {
+        String validStatuses = Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.PENDING, ArticleStatus.PUBLISHED)
+                .toString();
+        throw new BadRequest("Invalid Article status. It should be one of: " + validStatuses);
+      }
+  }
+
+  private LocalDateTime formatDateTime (String datetime){
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    return datetime != null ? LocalDateTime.parse(datetime,formatter) : null;
   }
 }

@@ -24,8 +24,23 @@ public interface ClapMapper {
   @Select("INSERT INTO claps (authorID, articleID, commentID) VALUES (#{authorID}::uuid, #{articleID}::uuid, #{commentID}::uuid) RETURNING *")
   Clap addClap(Clap clap);
 
-  @Update("UPDATE claps SET count = #{count} WHERE id = #{id}::uuid")
-  void updateClapCount(@Param("id") String id, @Param("count") Long count);
+  @Update("<script>" +
+      "UPDATE claps SET" +
+      "<choose>" +
+          "<when test='target == \"like\"'>" +
+            "likes = #{count}" +
+          "</when>" +
+          "<when test='target == \"dislike\"'>" +
+            "dislikes = #{count}" +
+          "</when>" +
+      "</choose>" +
+      "WHERE id = #{id}::uuid" +
+      "</script>"
+  )
+  void updateClapCount(@Param("id") String id, @Param("count") Long count, @Param("target") String target);
+
+  @Update("UPDATE claps SET dislikes = #{dislikes} WHERE id = #{id}::uuid")
+  void updateClapDislike(@Param("id") String id, @Param("dislikes") String dislikes);
 
   @Delete("DELETE FROM claps WHERE id = #{id}::uuid")
   void deleteClap(@Param("id") String id);

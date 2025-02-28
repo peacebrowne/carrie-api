@@ -184,8 +184,7 @@ public class CommentServiceImpl implements CommentService {
       List<Comment> comments = commentMapper.findCommentReplies(parentCommentID);
 
       // Encapsulate the total count and the list of comments
-      CustomDto data = new CustomDto(total, comments);
-      return data;
+        return new CustomDto(total, comments);
 
     } catch (BadRequest | NotFound e) {
       log.error("Validation Error: {}", e.getMessage(), e);

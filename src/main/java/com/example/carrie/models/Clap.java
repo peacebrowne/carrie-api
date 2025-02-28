@@ -31,9 +31,14 @@ public class Clap {
   private String commentID;
 
   /**
-   * Total count of claps given by the author.
+   * Total count of likes given by the author.
    */
-  private Long count;
+  private Long likes;
+
+  /**
+   * Total count of dislikes given by the author.
+   */
+  private Long dislikes;
 
   /**
    * Timestamp indicating when the clap was created.
