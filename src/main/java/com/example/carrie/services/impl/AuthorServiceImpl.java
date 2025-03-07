@@ -1,5 +1,6 @@
 package com.example.carrie.services.impl;
 
+import com.example.carrie.dto.CustomDto;
 import com.example.carrie.models.Author;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.errors.custom.Conflict;
@@ -15,9 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,15 +37,9 @@ public class AuthorServiceImpl implements AuthorService {
     public Author getAuthorById(String id) {
         try {
 
-            if (!UUIDValidator.isValidUUID(id))
-                throw new BadRequest("Invalid author ID!");
+            validateAuthor(id);
+            return authorMapper.findById(id);
 
-            Optional<Author> author = authorMapper.findById(id);
-
-            if (author.isEmpty())
-                throw new NotFound("Author does not exist.");
-
-            return author.get();
         } catch (BadRequest | NotFound e) {
             log.error("ERROR: {}", e.getMessage(), e);
             throw e;
@@ -161,4 +154,70 @@ public class AuthorServiceImpl implements AuthorService {
             throw new BadRequest("Invalid email address!");
     }
 
+    @Override
+    public Map<String, Object> followAuthor(String followerAuthor, String followedAuthor) {
+        try{
+
+            Arrays.asList(followerAuthor, followedAuthor).forEach(this::getAuthorById);
+            Map<String, Object> data = authorMapper.getSingleAuthorFollower(
+                    followerAuthor, followedAuthor);
+
+            if (data != null)
+                throw new Conflict("Author with this id: '"
+                        + followerAuthor + "' is already following the author with this id: '"
+                        + followedAuthor + "'");
+
+            return authorMapper.addAuthorFollower(followerAuthor, followedAuthor);
+            
+        } catch (BadRequest | Conflict | NotFound e) {
+            log.error("Validation Error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError("An unexpected error occurred while add the author follower.");
+        }
+    }
+
+    @Override
+    public CustomDto getAuthorFollowers(String id) {
+        try {
+            validateAuthor(id);
+
+            List<Map<String, Object>> authorFollowers = authorMapper.getAuthorFollowers(id);
+            return new CustomDto((long) authorFollowers.size(), authorFollowers);
+
+        }
+        catch (BadRequest | NotFound e) {
+            log.error("Validation Error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while fetching the author followers.");
+        }
+    }
+
+
+    private void validateAuthorFollower (String followerAuthor, String followedAuthor){
+        Arrays.asList(followerAuthor, followedAuthor).forEach(this::getAuthorById);
+
+    }
+
+    private void validateUUID(String id) {
+        if (!UUIDValidator.isValidUUID(id)) {
+            throw new BadRequest("Invalid Author ID");
+        }
+    }
+
+
+    private void validateAuthor(String authorID) {
+
+        // Validate Author ID
+        validateUUID(authorID);
+
+        Author author = authorMapper.findById(authorID);
+        if (author == null) {
+            throw new NotFound("Author does not exist!");
+        }
+    }
 }

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.carrie.dto.ArticleAnalyticsDto;
 import org.apache.ibatis.annotations.*;
 
 import com.example.carrie.models.Article;
@@ -13,6 +14,13 @@ public interface ArticleMapper {
 
         @Select("SELECT * FROM articles WHERE title =#{title}")
         List<Article> findByTitle(@Param("title") String title);
+
+        @Select("SELECT a.* FROM articles a LEFT JOIN article_tags at ON a.id = at.articleID LEFT JOIN tags t ON t.id = at.tagId WHERE t.name ILIKE #{tag} ORDER BY a.updatedAt DESC LIMIT #{limit} OFFSET #{start}")
+        List<Article> findByTag(@Param("tag") String tag,  @Param("limit") Long limit,
+                                @Param("start") Long start);
+
+        @Select("SELECT COUNT(*) AS total FROM (SELECT DISTINCT a.* FROM articles a LEFT JOIN article_tags at ON a.id = at.articleID LEFT JOIN tags t ON t.id = at.tagId WHERE t.name ILIKE #{tag})")
+        Long totalTagArticles(@Param("tag") String tag);
 
         @Select("SELECT " +
                   "a.*, " +
@@ -179,7 +187,7 @@ public interface ArticleMapper {
                 @Param("sort") String sort,
                 @Param("status") String status,
                 @Param("startDate") LocalDateTime startDate,
-                @Param("endDate") LocalDateTime endDate
+                        @Param("endDate") LocalDateTime endDate
         );
 
         @Select("<script> " +
@@ -313,5 +321,21 @@ public interface ArticleMapper {
 
         @Delete("DELETE FROM articles WHERE id = #{id}::uuid")
         void deleteArticle(@Param("id") String id);
+
+        @Select("SELECT " +
+                "COUNT(a.*) AS total, " +
+                "COUNT(CASE WHEN a.status = 'pending' THEN 1 END) AS pending, " +
+                "COUNT(CASE WHEN a.status = 'published' THEN 1 END) AS published, " +
+                "COUNT(CASE WHEN a.status = 'draft' THEN 1 END) AS draft, " +
+                "COALESCE(SUM(cl.likes), 0) AS likes, " +
+                "COALESCE(SUM(cl.dislikes), 0) AS dislikes " +
+                "FROM articles a " +
+                "LEFT JOIN claps cl ON cl.articleId = a.id " +
+                "LEFT JOIN authors ath ON ath.id = a.authorId " +
+                "WHERE a.authorId = #{authorId}::uuid")
+        ArticleAnalyticsDto getTotalArticleAnalytics(@Param("authorId") String authorId);
+
+
+
 
 }

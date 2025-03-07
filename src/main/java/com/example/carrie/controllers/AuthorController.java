@@ -1,5 +1,6 @@
 package com.example.carrie.controllers;
 
+import com.example.carrie.dto.CustomDto;
 import com.example.carrie.models.Author;
 import com.example.carrie.services.impl.AuthorServiceImpl;
 import com.example.carrie.success.Success;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -41,8 +43,26 @@ public class AuthorController {
         return Success.OK("Successfully Retrieved all Authors.", data);
     }
 
+    @GetMapping("/{id}/followers")
+    public ResponseEntity<?> getAuthorFollowers(
+            @PathVariable String id
+    ){
+        CustomDto followers = authorServiceImpl.getAuthorFollowers(id);
+        return Success.OK("Successfully Retrieved author followers", followers);
+    }
+
+    @PostMapping("/add-follower")
+    public ResponseEntity<?> addAuthorFollowers(
+            @RequestParam String followerAuthor,
+            @RequestParam String followedAuthor
+    ){
+        Map<String, Object> data =  authorServiceImpl.followAuthor(followerAuthor, followedAuthor);
+        return Success.CREATED("Successfully Added Author follower", data);
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<?> editAuthor(@RequestBody Author author, @PathVariable(required = true) String id) {
+    public ResponseEntity<?> editAuthor(
+            @RequestBody Author author, @PathVariable String id) {
 
         Author editedAuthor = authorServiceImpl.editAuthor(author, id);
         List<Author> data = Collections.singletonList(editedAuthor);

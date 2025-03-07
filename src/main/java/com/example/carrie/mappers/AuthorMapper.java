@@ -5,6 +5,7 @@ import com.example.carrie.models.Login;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Mapper
@@ -14,7 +15,7 @@ public interface AuthorMapper {
     List<Author> findAll(@Param("sort") String sort, @Param("limit") Long limit, @Param("start") Long start);
 
     @Select("SELECT id, username, email, dob, gender, createdAt, firstName, lastName, updatedAt FROM authors WHERE id = #{id}::uuid")
-    Optional<Author> findById(@Param("id") String id);
+    Author findById(@Param("id") String id);
 
     @Select("SELECT id, username, email, dob, gender, createdAt, firstName, lastName, updatedAt FROM authors WHERE email = #{target} OR username = #{target}")
     Optional<Author> findByEmailOrUsername(@Param("target") String target);
@@ -30,4 +31,13 @@ public interface AuthorMapper {
 
     @Select("DELETE FROM authors WHERE id = #{id}::uuid RETURNING id, username, email, dob, gender, createdAt, firstName, lastName, updatedAt")
     Author deleteAuthor(@Param("id") String id);
+
+    @Select("INSERT INTO author_followers (follower_author_id, followed_author_id) VALUES (#{follower_author_id}::uuid ,#{followed_author_id}::uuid) RETURNING *")
+    Map<String, Object> addAuthorFollower(@Param("follower_author_id") String follower_author_id, @Param("followed_author_id") String followed_author_id);
+
+    @Select("SELECT * FROM author_followers WHERE follower_author_id = #{follower_author_id}::uuid AND followed_author_id = #{followed_author_id}::uuid")
+    Map<String, Object> getSingleAuthorFollower(@Param("follower_author_id") String follower_author_id, @Param("followed_author_id") String followed_author_id);
+
+    @Select("SELECT a.id, a.firstName, a.lastName, a.username, a.dob, a.gender, a.email FROM authors a LEFT JOIN author_followers af ON a.id = af.follower_author_id WHERE af.followed_author_id = #{id}::uuid")
+    List<Map<String, Object>> getAuthorFollowers(@Param("id") String id);
 }

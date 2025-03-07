@@ -3,6 +3,7 @@ package com.example.carrie.controllers;
 import java.util.Collections;
 import java.util.List;
 
+import com.example.carrie.dto.ArticleAnalyticsDto;
 import com.example.carrie.success.Success;
 
 import jakarta.validation.Valid;
@@ -41,6 +42,21 @@ public class ArticleController {
             sort, limit, start, status, startDate, endDate
     );
     return Success.OK("Successfully Retrieved all Articles.", data);
+  }
+
+
+  @GetMapping("/{id}/article-analytics")
+  public ResponseEntity<?> getArticleAnalytics(@PathVariable String id) {
+    ArticleAnalyticsDto data = articleServiceImpl.getArticleAnalytics(id);
+    return Success.OK("Successfully Retrieved Article Analytics", data);
+  }
+
+
+  @GetMapping("/tag/{tag}")
+  public ResponseEntity<?> getArticleByTags(@PathVariable String tag, @RequestParam(required = false, defaultValue = "10") Long limit,
+                                            @RequestParam(required = false, defaultValue = "0") Long start){
+    CustomDto data = articleServiceImpl.getArticleByTag(tag, limit, start);
+    return Success.OK("Successfully Retrieved Article with tags", data);
   }
 
   @GetMapping("/{id}")
@@ -96,6 +112,7 @@ public class ArticleController {
             );
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
+
 
   @PostMapping
   public ResponseEntity<?> addArticle(

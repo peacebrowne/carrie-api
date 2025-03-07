@@ -1,5 +1,6 @@
 package com.example.carrie.services;
 
+import com.example.carrie.dto.ArticleAnalyticsDto;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.carrie.dto.CustomDto;
@@ -20,4 +21,7 @@ public interface ArticleService {
 
   public CustomDto searchArticles(String term, String authorID, String sort, Long limit, Long start, String status, String startDate, String endDate);
 
+  public CustomDto getArticleByTag(String tag, Long limit, Long start);
+
+  ArticleAnalyticsDto getArticleAnalytics(String id);
 }

@@ -1,5 +1,6 @@
 package com.example.carrie.services.impl;
 
+import com.example.carrie.dto.ArticleAnalyticsDto;
 import com.example.carrie.enumerators.ArticleStatus;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.errors.custom.Conflict;
@@ -333,8 +334,8 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     // Validate Author ID
     validateUUID(authorID, "Invalid Author ID");
 
-    Optional<Author> author = authorMapper.findById(authorID);
-    if (author.isEmpty()) {
+    Author author = authorMapper.findById(authorID);
+    if (author == null) {
       throw new NotFound("Author does not exist!");
     }
   }
@@ -364,5 +365,40 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   private LocalDateTime formatDateTime (String datetime){
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     return datetime != null ? LocalDateTime.parse(datetime,formatter) : null;
+  }
+
+  @Override
+  public CustomDto getArticleByTag(String tag, Long limit, Long start) {
+    try{
+      Long total = articleMapper.totalTagArticles(tag);
+
+      List<Article> articles = articleMapper.findByTag(tag, limit, start);
+      articles.forEach(article -> {
+        article.setTags(getArticleTags(article.getId()));
+      });
+      return new CustomDto(total, articles);
+
+    } catch (BadRequest | NotFound e) {
+      log.error("Error: {}", e.getMessage(), e);
+      throw e;
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while fetching an Article by Tag.");
+    }
+  }
+
+  @Override
+  public ArticleAnalyticsDto getArticleAnalytics(String id) {
+      try {
+        ArticleAnalyticsDto analyticsDto = articleMapper.getTotalArticleAnalytics(id);
+        System.out.println(analyticsDto);
+
+        return analyticsDto;
+      } catch (Exception e) {
+        log.error("Internal Server Error: {}", e.getMessage(), e);
+        throw new InternalServerError(
+                "An unexpected error occurred while fetching Article Analytics.");
+      }
   }
 }

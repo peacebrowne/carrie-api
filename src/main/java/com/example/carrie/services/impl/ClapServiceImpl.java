@@ -155,8 +155,8 @@ public class ClapServiceImpl implements ClapService {
     // Validate Author ID
     validateUUID(authorID, "Invalid Author ID");
 
-    Optional<Author> author = authorMapper.findById(authorID);
-    if (author.isEmpty()) {
+    Author author = authorMapper.findById(authorID);
+    if (author == null) {
       throw new NotFound("Author does not exist!");
     }
   }

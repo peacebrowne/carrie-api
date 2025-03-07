@@ -88,3 +88,14 @@ CREATE TABLE IF NOT EXISTS images(
     FOREIGN KEY(articleID) REFERENCES articles(id) ON DELETE CASCADE,
     FOREIGN KEY(authorID) REFERENCES authors(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS author_follower (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  follower_author_id UUID NOT NULL,
+  followed_author_id UUID NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (follower_author_id) REFERENCES authors(id) ON DELETE CASCADE,
+  FOREIGN KEY (followed_author_id) REFERENCES authors(id) ON DELETE CASCADE,
+  UNIQUE(follower_author_id, followed_author_id)
+);
