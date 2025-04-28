@@ -2,14 +2,12 @@ package com.example.carrie.controllers;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import com.example.carrie.models.Image;
 import com.example.carrie.services.impl.ImageServiceImpl;
+import org.springframework.web.multipart.MultipartFile;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import java.io.IOException;
 
 @RequestMapping("/api/images")
 @RestController
@@ -31,6 +29,23 @@ public class ImageController {
         : ResponseEntity.ok().body(
             image.getData());
 
+  }
+
+  @PostMapping
+  public ResponseEntity<byte[]> addImage(
+          @RequestParam String id,
+          MultipartFile img,
+          @RequestParam String type
+  ) throws IOException {
+
+    System.out.println(id);
+
+      Image image = imageServiceImpl.addImage(img, id,  type);
+
+    return image.getData() != null
+            ? ResponseEntity.ok().contentType(MediaType.valueOf(image.getType())).body(image.getData())
+            : ResponseEntity.ok().body(
+            image.getData());
   }
 
 }

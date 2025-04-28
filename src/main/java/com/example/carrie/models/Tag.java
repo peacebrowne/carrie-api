@@ -21,10 +21,6 @@ public class Tag {
    */
   private String name;
 
-  /*
-   * Local date and time the tag was created.
-   * This field records the timestamp when the tag was created.
-   */
-  private LocalDateTime createdAt;
+
 
 }

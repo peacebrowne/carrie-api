@@ -2,9 +2,9 @@ package com.example.carrie.mappers;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import com.example.carrie.dto.ArticleAnalyticsDto;
 import org.apache.ibatis.annotations.*;
 
 import com.example.carrie.models.Article;
@@ -333,9 +333,25 @@ public interface ArticleMapper {
                 "LEFT JOIN claps cl ON cl.articleId = a.id " +
                 "LEFT JOIN authors ath ON ath.id = a.authorId " +
                 "WHERE a.authorId = #{authorId}::uuid")
-        ArticleAnalyticsDto getTotalArticleAnalytics(@Param("authorId") String authorId);
+        Map<String, Object> getTotalArticleAnalytics(@Param("authorId") String authorId);
 
+        @Select("INSERT INTO article_shares (article_id, shared_by) VALUES (#{articleId}::uuid, #{sharedBy}::uuid) RETURNING *")
+        Map<String, Object> shareArticle(@Param("articleId") String articleId,
+                                         @Param("sharedBy") String sharedBy
+        );
 
+        @Select("SELECT * FROM article_shares WHERE article_id = #{articleId}::uuid")
+        List<Map<String, Object>> getSharesByArticle(@Param("articleId") String articleId);
 
+        @Select("SELECT DISTINCT ON (ar.title) ar.*, t.name " +
+                "FROM articles ar " +
+                "INNER JOIN article_tags art ON art.articleId = ar.id " +
+                "INNER JOIN tags t ON t.id = art.tagId " +
+                "INNER JOIN author_interest ai ON t.id = ai.tag_id " +
+                "WHERE ai.author_id = #{authorId}::uuid AND ar.status = 'published " +
+                "ORDER BY ar.title, ar.createdAt DESC " +
+                "LIMIT #{limit} OFFSET #{start}")
+        List<Article> findArticlesByAuthorInterest(@Param("authorId") String authorId,  @Param("limit") Long limit,
+                                                   @Param("start") Long start);
 
 }

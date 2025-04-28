@@ -1,6 +1,8 @@
 package com.example.carrie.services.impl;
 
 import com.example.carrie.dto.CustomDto;
+import com.example.carrie.mappers.ImageMapper;
+import com.example.carrie.mappers.TagMapper;
 import com.example.carrie.models.Author;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.errors.custom.Conflict;
@@ -8,6 +10,7 @@ import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.errors.custom.NotFound;
 
 import com.example.carrie.mappers.AuthorMapper;
+import com.example.carrie.models.Tag;
 import com.example.carrie.services.AuthorService;
 import com.example.carrie.utils.validations.EmailValidator;
 import com.example.carrie.utils.validations.UUIDValidator;
@@ -20,17 +23,24 @@ import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
-public class AuthorServiceImpl implements AuthorService {
+public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService {
     private final AuthorMapper authorMapper;
     private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+    private TagServiceImpl tagServiceImpl = null;
 
-
-    public AuthorServiceImpl(AuthorMapper authorMapper) {
+    public AuthorServiceImpl(
+            AuthorMapper authorMapper,
+            ImageMapper imageMapper,
+            TagMapper tagMapper
+            ) {
+        super(imageMapper);
         this.authorMapper = authorMapper;
+        tagServiceImpl = new TagServiceImpl(tagMapper);
     }
 
     @Override
@@ -64,10 +74,13 @@ public class AuthorServiceImpl implements AuthorService {
     }
 
     @Override
-    public Author addAuthor(Author author) {
+    public Author addAuthor(Author author, MultipartFile image) {
 
         try {
             validateEmail(author.getEmail());
+            List<String> interestNames = author.getInterests();
+
+            List<Tag> interests = tagServiceImpl.addTags(interestNames);
 
             Optional<Author> authorExist = authorMapper.findByEmailOrUsername(author.getEmail());
 
@@ -80,14 +93,23 @@ public class AuthorServiceImpl implements AuthorService {
 
             author.setPassword(encoder.encode(author.getPassword()));
 
-            return authorMapper.addAuthor(author);
+            Author createdAuthor = authorMapper.addAuthor(author);
+            createdAuthor.setInterests(interestNames);
+
+            // Add author's image
+            addImage(image, createdAuthor.getId(), "author");
+
+            // Add author interest
+            tagServiceImpl.addAuthorInterest(createdAuthor.getId(), interests);
+
+            return createdAuthor;
         } catch (BadRequest | Conflict e) {
             log.error("Bad Request: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
-                    "An unexpected error occurred while creating an account. Please try again!");
+                    "An unexpected error occurred while creating an account.");
 
         }
     }
@@ -119,6 +141,9 @@ public class AuthorServiceImpl implements AuthorService {
             Optional.ofNullable(author.getUsername()).ifPresent(existingAuthor::setUsername);
             Optional.ofNullable(author.getFirstName()).ifPresent(existingAuthor::setFirstName);
             Optional.ofNullable(author.getLastName()).ifPresent(existingAuthor::setLastName);
+            Optional.ofNullable(author.getAddress()).ifPresent(existingAuthor::setAddress);
+            Optional.ofNullable(author.getMsisdn()).ifPresent(existingAuthor::setMsisdn);
+            Optional.ofNullable(author.getBiography()).ifPresent(existingAuthor::setBiography);
 
             return authorMapper.editAuthor(existingAuthor);
         } catch (BadRequest | NotFound e) {
@@ -155,21 +180,35 @@ public class AuthorServiceImpl implements AuthorService {
     }
 
     @Override
-    public Map<String, Object> followAuthor(String followerAuthor, String followedAuthor) {
+    public Map<String, Object> followAuthor(String follower, String author) {
         try{
 
-            Arrays.asList(followerAuthor, followedAuthor).forEach(this::getAuthorById);
+            validateAuthorFollower(follower, author);
             Map<String, Object> data = authorMapper.getSingleAuthorFollower(
-                    followerAuthor, followedAuthor);
+                    follower, author);
 
             if (data != null)
                 throw new Conflict("Author with this id: '"
-                        + followerAuthor + "' is already following the author with this id: '"
-                        + followedAuthor + "'");
+                        + follower + "' is already following the author with this id: '"
+                        + author + "'");
 
-            return authorMapper.addAuthorFollower(followerAuthor, followedAuthor);
+            return authorMapper.followAuthor(follower, author);
             
         } catch (BadRequest | Conflict | NotFound e) {
+            log.error("Validation Error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError("An unexpected error occurred while add the author follower.");
+        }
+    }
+
+    @Override
+    public Map<String, Object> unfollowAuthor(String follower, String author) {
+        try{
+            validateAuthorFollower(follower, author);
+            return authorMapper.unfollowAuthor(follower, author);
+        }catch (BadRequest | Conflict | NotFound e) {
             log.error("Validation Error: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
@@ -197,10 +236,25 @@ public class AuthorServiceImpl implements AuthorService {
         }
     }
 
+    @Override
+    public List<Author> getFollowedAuthors(String id) {
+
+        try{
+            validateAuthor(id);
+            return authorMapper.getFollowedAuthors(id);
+        }catch (BadRequest | NotFound e) {
+            log.error("Validation Error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while fetching the followed authors.");
+        }
+    }
+
 
     private void validateAuthorFollower (String followerAuthor, String followedAuthor){
         Arrays.asList(followerAuthor, followedAuthor).forEach(this::getAuthorById);
-
     }
 
     private void validateUUID(String id) {
@@ -208,7 +262,6 @@ public class AuthorServiceImpl implements AuthorService {
             throw new BadRequest("Invalid Author ID");
         }
     }
-
 
     private void validateAuthor(String authorID) {
 
@@ -220,4 +273,6 @@ public class AuthorServiceImpl implements AuthorService {
             throw new NotFound("Author does not exist!");
         }
     }
+
+    //    TODO - VALIDATE MSISDN
 }

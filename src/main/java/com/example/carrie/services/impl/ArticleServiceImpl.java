@@ -1,13 +1,11 @@
 package com.example.carrie.services.impl;
 
-import com.example.carrie.dto.ArticleAnalyticsDto;
 import com.example.carrie.enumerators.ArticleStatus;
 import com.example.carrie.errors.custom.BadRequest;
 import com.example.carrie.errors.custom.Conflict;
 import com.example.carrie.errors.custom.InternalServerError;
 import com.example.carrie.errors.custom.NotFound;
 import com.example.carrie.mappers.ArticleMapper;
-import com.example.carrie.mappers.ArticleTagMapper;
 import com.example.carrie.mappers.AuthorMapper;
 import com.example.carrie.mappers.ImageMapper;
 import com.example.carrie.mappers.TagMapper;
@@ -42,12 +40,11 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       ArticleMapper articleMapper,
       AuthorMapper authorMapper,
       TagMapper tagMapper,
-      ArticleTagMapper articleTagMapper,
       ImageMapper imageMapper) {
     super(imageMapper);
     this.articleMapper = articleMapper;
     this.authorMapper = authorMapper;
-    tagServiceImpl = new TagServiceImpl(tagMapper, articleTagMapper);
+    tagServiceImpl = new TagServiceImpl(tagMapper);
   }
 
   @Override
@@ -149,7 +146,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       Article createdArticle = articleMapper.addArticle(article);
       createdArticle.setTags(tagNames);
 
-      // Create image
+      // Add article's image
       addImage(image, createdArticle.getId(), "article");
 
       // Creates a connection between articles and tags
@@ -215,7 +212,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   }
 
   @Override
-  public Article editArticle(Article article, String id) {
+  public Article editArticle(Article article, MultipartFile image, String id) {
 
     try {
       // Retrieve the existing article by its ID
@@ -319,6 +316,31 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
   }
 
+  @Override
+  public List<Article> getArticlesByAuthorInterest(String authorID, Long limit, Long start)
+  {
+    try{
+      validateAuthor(authorID);
+
+      List<Article> articles = articleMapper.findArticlesByAuthorInterest(authorID, limit, start);
+
+      // Add related tags to articles
+      articles.forEach(article -> {
+        article.setTags(getArticleTags(article.getId()));
+      });
+
+      return articles;
+    }catch (BadRequest e) {
+      log.error("Bad Request: {}", e.getMessage(), e);
+      throw e;
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while fetching Articles based on Author's Interest.");
+    }
+
+  }
+
   private List<String> getArticleTags(String id) {
     return tagServiceImpl.getArticleTags(id);
   }
@@ -389,9 +411,9 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   }
 
   @Override
-  public ArticleAnalyticsDto getArticleAnalytics(String id) {
+  public Map<String, Object> getArticleAnalytics(String id) {
       try {
-        ArticleAnalyticsDto analyticsDto = articleMapper.getTotalArticleAnalytics(id);
+        Map<String, Object> analyticsDto = articleMapper.getTotalArticleAnalytics(id);
         System.out.println(analyticsDto);
 
         return analyticsDto;
@@ -400,5 +422,38 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
         throw new InternalServerError(
                 "An unexpected error occurred while fetching Article Analytics.");
       }
+  }
+
+  public Map<String, Object> shareArticle(String articleId, String sharedBy) {
+    try {
+
+      validateArticle(articleId);
+      validateAuthor(sharedBy);
+      return articleMapper.shareArticle(articleId, sharedBy);
+
+    }catch (BadRequest | NotFound e) {
+      log.error("Error: {}", e.getMessage(), e);
+      throw e;
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while sharing an Article.");
+    }
+  }
+
+  public List<Map<String, Object>> getSharesByArticle(String articleId) {
+    try {
+
+      validateArticle(articleId);
+      return articleMapper.getSharesByArticle(articleId);
+
+    }catch (BadRequest | NotFound e) {
+      log.error("Error: {}", e.getMessage(), e);
+      throw e;
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while fetching shared Articles.");
+    }
   }
 }

@@ -2,8 +2,8 @@ package com.example.carrie.controllers;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import com.example.carrie.dto.ArticleAnalyticsDto;
 import com.example.carrie.success.Success;
 
 import jakarta.validation.Valid;
@@ -47,7 +47,7 @@ public class ArticleController {
 
   @GetMapping("/{id}/article-analytics")
   public ResponseEntity<?> getArticleAnalytics(@PathVariable String id) {
-    ArticleAnalyticsDto data = articleServiceImpl.getArticleAnalytics(id);
+    Map<String, Object> data = articleServiceImpl.getArticleAnalytics(id);
     return Success.OK("Successfully Retrieved Article Analytics", data);
   }
 
@@ -113,7 +113,6 @@ public class ArticleController {
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 
-
   @PostMapping
   public ResponseEntity<?> addArticle(
       @Valid @RequestPart Article article,
@@ -130,8 +129,15 @@ public class ArticleController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<?> editArticle(@RequestBody Article article, @PathVariable String id) {
-    List<Article> data = Collections.singletonList(articleServiceImpl.editArticle(article, id));
+  public ResponseEntity<?> editArticle(
+          @RequestPart Article article,
+          @RequestPart(required = false) MultipartFile image,
+          @PathVariable String id
+
+  ) {
+
+    System.out.println("===HERE===");
+    Article data = articleServiceImpl.editArticle(article, image, id);
     return Success.OK("Successfully Updated Article.", data);
   }
 
@@ -139,6 +145,29 @@ public class ArticleController {
   public ResponseEntity<?> deleteArticle(@PathVariable String id) {
     List<Article> data = Collections.singletonList(articleServiceImpl.deleteArticle(id));
     return Success.OK("Successfully Deleted Article.", data);
+  }
+
+  @PostMapping("/share")
+  public ResponseEntity<?> shareArticle(@RequestBody Map<String, Object> payload) {
+    String articleId = payload.get("articleId").toString();
+    String sharedBy = payload.get("sharedBy").toString();
+
+    Map<String, Object> sharedArticle = articleServiceImpl.shareArticle(articleId, sharedBy);
+    return Success.CREATED("Successfully shared the article", sharedArticle);
+  }
+
+  @GetMapping("/shares/{articleId}")
+  public ResponseEntity<?> getShares(@PathVariable String articleId) {
+    return Success.OK("Successfully retrieved shared article",
+            articleServiceImpl.getSharesByArticle(articleId));
+  }
+
+  @GetMapping("/author/{id}/interests")
+  public ResponseEntity<?> getArticlesByAuthorInterest(@PathVariable String id,
+          @RequestParam(required = false, defaultValue = "10") Long limit,
+          @RequestParam(required = false, defaultValue = "0") Long start){
+    return Success.OK("Successfully Retrieved Author Interested Articles",
+            articleServiceImpl.getArticlesByAuthorInterest(id, limit, start));
   }
 
 }

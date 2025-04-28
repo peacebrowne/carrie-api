@@ -2,10 +2,8 @@ package com.example.carrie.models;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import jakarta.validation.constraints.Email;
@@ -71,6 +69,12 @@ public class Author {
      */
     private String gender;
 
+    /**
+     * List of topics that the author has interest in reading
+     * Tags/Categories ids.
+     * */
+    private List<String> interests;
+
     /*
      * Local date and time the Image was created.
      * This field records the timestamp when the image was first created.
@@ -82,5 +86,13 @@ public class Author {
      * This field stores the timestamp when the image was last updated.
      */
     private LocalDateTime updatedAt;
+
+    private String msisdn;
+
+    private String address;
+
+    private String biography;
+
+   
 
 }

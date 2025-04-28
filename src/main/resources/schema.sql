@@ -99,3 +99,22 @@ CREATE TABLE IF NOT EXISTS author_follower (
   FOREIGN KEY (followed_author_id) REFERENCES authors(id) ON DELETE CASCADE,
   UNIQUE(follower_author_id, followed_author_id)
 );
+
+CREATE TABLE IF NOT EXISTS articles_shares(
+   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+   article_id UUID NOT NULL,
+   shared_by UUID NOT NULL,
+   shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+   FOREIGN KEY (shared_by) REFERENCES authors(id) ON DELETE CASCADE
+)
+
+CREATE TABLE IF NOT EXISTS author_interest (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    author_id UUID NOT NULL,
+    tag_id UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+)

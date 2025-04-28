@@ -32,12 +32,18 @@ public interface AuthorMapper {
     @Select("DELETE FROM authors WHERE id = #{id}::uuid RETURNING id, username, email, dob, gender, createdAt, firstName, lastName, updatedAt")
     Author deleteAuthor(@Param("id") String id);
 
-    @Select("INSERT INTO author_followers (follower_author_id, followed_author_id) VALUES (#{follower_author_id}::uuid ,#{followed_author_id}::uuid) RETURNING *")
-    Map<String, Object> addAuthorFollower(@Param("follower_author_id") String follower_author_id, @Param("followed_author_id") String followed_author_id);
+    @Select("INSERT INTO author_followers (follower, author) VALUES (#{follower}::uuid ,#{author}::uuid) RETURNING *")
+    Map<String, Object> followAuthor(@Param("follower") String follower, @Param("author") String author);
 
-    @Select("SELECT * FROM author_followers WHERE follower_author_id = #{follower_author_id}::uuid AND followed_author_id = #{followed_author_id}::uuid")
-    Map<String, Object> getSingleAuthorFollower(@Param("follower_author_id") String follower_author_id, @Param("followed_author_id") String followed_author_id);
+    @Select("DELETE FROM author_followers WHERE follower = #{follower}::uuid AND author = #{author}::uuid RETURNING *")
+    Map<String, Object> unfollowAuthor(@Param("follower") String follower, @Param("author") String author);
 
-    @Select("SELECT a.id, a.firstName, a.lastName, a.username, a.dob, a.gender, a.email FROM authors a LEFT JOIN author_followers af ON a.id = af.follower_author_id WHERE af.followed_author_id = #{id}::uuid")
+    @Select("SELECT * FROM author_followers WHERE follower = #{follower}::uuid AND author = #{author}::uuid")
+    Map<String, Object> getSingleAuthorFollower(@Param("follower") String follower, @Param("author") String author);
+
+    @Select("SELECT a.id, a.firstName, a.lastName, a.username, a.dob, a.gender, a.email FROM authors a LEFT JOIN author_followers af ON a.id = af.follower WHERE af.author = #{id}::uuid")
     List<Map<String, Object>> getAuthorFollowers(@Param("id") String id);
+
+    @Select("SELECT a.id, a.username, a.email, a.dob, a.gender, a.createdAt, a.firstName, a.lastName, a.updatedAt FROM author_followers af LEFT JOIN authors a ON a.id = af.author WHERE af.follower = #{id}::uuid")
+    List<Author> getFollowedAuthors(@Param("id") String id);
 }

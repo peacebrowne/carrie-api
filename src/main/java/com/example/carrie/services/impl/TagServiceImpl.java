@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.example.carrie.dto.CustomDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,12 +21,12 @@ import com.example.carrie.mappers.TagMapper;
 @Service
 public class TagServiceImpl {
   private final TagMapper tagMapper;
-  private final ArticleTagMapper articleTagMapper;
   private static final Logger log = LoggerFactory.getLogger(TagServiceImpl.class);
 
-  public TagServiceImpl(TagMapper tagMapper, ArticleTagMapper articleTagMapper) {
+  public TagServiceImpl(
+          TagMapper tagMapper
+         ) {
     this.tagMapper = tagMapper;
-    this.articleTagMapper = articleTagMapper;
   }
 
   protected List<Tag> addTags(List<String> tagNames) {
@@ -44,10 +45,12 @@ public class TagServiceImpl {
         Tag newTag = new Tag();
         newTag.setName(name);
 
-        /**
-         * If the tag does not exist, add it to the database and then add it to the
-         * list. Otherwise, add the existing tag to the list.
-         */
+        System.out.println(
+                """
+                        "===TESTING==="
+                        """
+        );
+
         tags.add(existingTag.orElseGet(() -> tagMapper.addTags(newTag)));
 
       }
@@ -58,7 +61,6 @@ public class TagServiceImpl {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
           "An unexpected error occurred while adding a Tag.");
-
     }
 
   }
@@ -68,20 +70,11 @@ public class TagServiceImpl {
       // Iterate over the provided tag names
       tags.forEach(tag -> {
 
-        // Create a new instance of ArticleTag to establish the relationship between an article and a tag
-        ArticleTag articleTag = new ArticleTag();
-
-        // Set the article ID for the relationship
-        articleTag.setArticleID(articleID);
-
-        // Set the tag ID for the relationship
-        articleTag.setTagID(tag.getId());
-
         /*
-         * Insert the ArticleTag mapping into the database to associate the tag with the
-         * article
+         * Insert the ArticleTag mapping into the
+         * database to associate the tag with the article
          */
-        articleTagMapper.addArticleTag(articleTag);
+        tagMapper.addArticleTag(articleID, tag.getId());
 
       });
     } catch (Exception e) {
@@ -97,7 +90,7 @@ public class TagServiceImpl {
 
         // Iterate through the list of article objects and return a list of names for each article
         // Return the tag name
-        return articleTagMapper.getArticleTags(articleID).stream().map(Tag::getName).collect(Collectors.toList());
+        return tagMapper.getArticleTags(articleID).stream().map(Tag::getName).collect(Collectors.toList());
 
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -143,7 +136,7 @@ public class TagServiceImpl {
        * Delete the ArticleTag mapping into the database to disassociate the tag with
        * the article
        */
-      articleTagMapper.deleteArticleTag(articleID);
+      tagMapper.deleteArticleTag(articleID);
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
@@ -152,4 +145,33 @@ public class TagServiceImpl {
     }
   }
 
+  protected void addAuthorInterest(String authorID, List<Tag> interests){
+    try{
+      interests.forEach(interest -> {
+
+        /*
+         * Insert the ArticleTag mapping into the
+         * database to associate the tag with the article
+         */
+        tagMapper.addAuthorInterest(authorID, interest.getId());
+
+      });
+    }catch (Exception e){
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while creating an account."
+      );
+    }
+  }
+
+  public List<Tag> getAllTags() {
+    try{
+      return tagMapper.getAll();
+    }catch(Exception e){
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while getting all tags"
+      );
+    }
+  }
 }

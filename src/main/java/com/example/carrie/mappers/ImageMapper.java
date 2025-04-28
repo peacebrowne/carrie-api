@@ -22,8 +22,13 @@ public interface ImageMapper {
   @Select("INSERT INTO images (name, targetID, type, data) VALUES (#{name}, #{targetID}::uuid, #{type}, #{data}) RETURNING *")
   Image addImage(Image image);
 
-  @Update("UPDATE images SET name = #{name}, targetID = #{targetID}::uuid, type = #{type}, data = #{data}, updatedAt = #{updatedAt} WHERE id = #{id}::uuid")
-  void editImage(Image image);
+  @Select("UPDATE images SET name = #{name}, targetID = #{targetID}::uuid, type = #{type}, data = #{data} WHERE id = #{id}::uuid RETURNING *")
+  Image editImage(
+          @Param("name") String name,
+          @Param("targetID") String targetID,
+          @Param("type") String type,
+          @Param("data") byte[] data,
+          @Param("id") String id);
 
   @Delete("DELETE FROM images WHERE id = #{id}::uuid")
   void deleteImage(@Param("id") String id);

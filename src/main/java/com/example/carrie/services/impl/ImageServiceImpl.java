@@ -54,17 +54,34 @@ public class ImageServiceImpl {
 
   }
 
-  protected void addImage(MultipartFile image, String targetID, String targetType) throws IOException {
+  public Image addImage(
+          MultipartFile image,
+          String targetID,
+          String targetType) throws IOException {
     try {
 
+      if(image == null) return null;
+
       validateImage(image.getContentType(), targetType);
+
+      Image existingImage = getImageByTarget(targetID);
 
       Image img = new Image();
       img.setTargetID(targetID);
       img.setName(image.getOriginalFilename());
       img.setData(image.getBytes());
       img.setType(image.getContentType());
-      imageMapper.addImage(img);
+
+      if (existingImage.getId() == null){
+        return imageMapper.addImage(img);
+      }else {
+
+        return imageMapper.editImage(img.getName(), img.getTargetID(), img.getType(), img.getData(), existingImage.getId());
+      }
+
+
+
+
 
     } catch (BadRequest | IOException e) {
       log.error("Bad image format: {}", e.getMessage(), e);

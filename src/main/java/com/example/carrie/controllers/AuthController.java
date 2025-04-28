@@ -8,9 +8,11 @@ import com.example.carrie.services.impl.AuthorServiceImpl;
 import com.example.carrie.success.Success;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,17 +28,19 @@ public class AuthController {
     @Autowired
     AuthServiceImpl authServiceImpl;
 
-
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody Author author, BindingResult result) {
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> register(
+            @Valid @RequestPart("author") Author author,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            BindingResult result) {
 
         if (result.hasErrors()) {
             throw new BadRequest(result.getAllErrors().get(0).getDefaultMessage());
         }
 
-        Author createdAuthor = authorServiceImpl.addAuthor(author);
-        List<Author> data = Collections.singletonList(createdAuthor);
-
+        List<Author> data = Collections.singletonList(
+                authorServiceImpl.addAuthor(author, image)
+        );
         return Success.CREATED("Successfully created Author.", data);
     }
 

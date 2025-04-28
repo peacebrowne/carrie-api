@@ -5,12 +5,7 @@ import com.example.carrie.models.Author;
 import com.example.carrie.services.impl.AuthorServiceImpl;
 import com.example.carrie.success.Success;
 
-import jakarta.validation.Valid;
-
-import com.example.carrie.errors.custom.BadRequest;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -51,12 +46,29 @@ public class AuthorController {
         return Success.OK("Successfully Retrieved author followers", followers);
     }
 
-    @PostMapping("/add-follower")
-    public ResponseEntity<?> addAuthorFollowers(
-            @RequestParam String followerAuthor,
-            @RequestParam String followedAuthor
+    @GetMapping("/{id}/followed")
+    public ResponseEntity<?> getFollowedAuthors(
+            @PathVariable String id
     ){
-        Map<String, Object> data =  authorServiceImpl.followAuthor(followerAuthor, followedAuthor);
+        List<Author> followers = authorServiceImpl.getFollowedAuthors(id);
+        return Success.OK("Successfully Retrieved author followers", followers);
+    }
+
+    @PostMapping("/follow")
+    public ResponseEntity<?> addAuthorFollower(
+            @RequestParam String follower,
+            @RequestParam String author
+    ){
+        Map<String, Object> data =  authorServiceImpl.followAuthor(follower, author);
+        return Success.CREATED("Successfully Added Author follower", data);
+    }
+
+    @DeleteMapping("/unfollow")
+    public ResponseEntity<?> removeAuthorFollower(
+            @RequestParam String follower,
+            @RequestParam String author
+    ){
+        Map<String, Object> data =  authorServiceImpl.unfollowAuthor(follower, author);
         return Success.CREATED("Successfully Added Author follower", data);
     }
 
@@ -77,4 +89,5 @@ public class AuthorController {
 
         return Success.OK("Successfully Deleted Author", data);
     }
+
 }
