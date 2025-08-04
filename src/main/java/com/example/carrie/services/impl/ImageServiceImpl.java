@@ -80,9 +80,6 @@ public class ImageServiceImpl {
       }
 
 
-
-
-
     } catch (BadRequest | IOException e) {
       log.error("Bad image format: {}", e.getMessage(), e);
       throw e;

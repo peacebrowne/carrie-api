@@ -36,10 +36,10 @@ public class ClapController {
 
   @PostMapping
   public ResponseEntity<?> addClap(@RequestBody Clap clap, @RequestParam String action) {
+    System.out.println(clap);
     Clap data = clapServiceImpl.addClap(clap, action);
     return Success.CREATED("Successfully Liked", data);
   }
-
 
   @DeleteMapping("/{id}")
   public ResponseEntity<?> deleteArticle(@PathVariable String id) {
