@@ -1,7 +1,5 @@
 package com.example.carrie.models;
 
-import java.time.LocalDateTime;
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

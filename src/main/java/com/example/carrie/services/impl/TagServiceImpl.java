@@ -5,16 +5,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.example.carrie.dto.CustomDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.carrie.models.ArticleTag;
 import com.example.carrie.models.Tag;
 import com.example.carrie.errors.custom.InternalServerError;
-import com.example.carrie.mappers.ArticleTagMapper;
 import com.example.carrie.mappers.TagMapper;
 
 @Transactional

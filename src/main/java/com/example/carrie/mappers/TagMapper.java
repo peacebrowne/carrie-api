@@ -1,6 +1,5 @@
 package com.example.carrie.mappers;
 
-import com.example.carrie.models.ArticleTag;
 import org.apache.ibatis.annotations.*;
 
 import com.example.carrie.models.Tag;

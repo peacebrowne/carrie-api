@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS articles (
     authorID UUID NOT NULL,
     description TEXT,
     content TEXT,
-    published_at TIMESTAMP,
+         TIMESTAMP,
     status TEXT NOT NULL DEFAULT 'draft',
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -118,3 +118,5 @@ CREATE TABLE IF NOT EXISTS author_interest (
     FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
 )
+
+
