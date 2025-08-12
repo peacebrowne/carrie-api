@@ -20,14 +20,19 @@ public interface TagMapper {
   @Select("SELECT t.name FROM tags t LEFT JOIN article_tags at ON at.tagID = t.id  WHERE at.articleID = #{articleID}::uuid")
   List<Tag> getArticleTags(@Param("articleID") String articleID);
 
-  @Insert("INSERT INTO author_interest (author_id, tag_id) VALUES(#{authorID}::uuid, #{tagID}::uuid)")
-  void addAuthorInterest(String authorID, String tagID);
+  @Select("SELECT t.name FROM tags t LEFT JOIN author_interest at ON at.tagID = t.id  WHERE at.authorID = #{authorID}::uuid")
+  List<Tag> getAuthorTags(@Param("authorID") String authorID);
+
+  @Insert("INSERT INTO author_interest (authorID, tagID) VALUES(#{authorID}::uuid, #{tagID}::uuid)")
+  void addAuthorInterest(@Param("authorID") String authorID, @Param("tagID") String tagID);
 
   @Insert("INSERT INTO article_tags (articleID, tagID) VALUES(#{articleID}::uuid, #{tagID}::uuid)")
-  void addArticleTag(String articleID, String tagID);
+  void addArticleTag(@Param("authorID") String authorID, @Param("tagID") String tagID);
 
   @Delete("DELETE FROM article_tags WHERE articleID = #{articleID}::uuid")
   void deleteArticleTag(@Param("articleID") String articleID);
 
+  @Delete("DELETE FROM author_interest WHERE authorID = #{authorID}::uuid")
+  void deleteAuthorInterest(@Param("authorID") String authorID);
 
 }

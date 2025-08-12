@@ -1,6 +1,5 @@
 package com.example.carrie.controllers;
 
-import com.example.carrie.dto.CustomDto;
 import com.example.carrie.services.impl.TagServiceImpl;
 import com.example.carrie.success.Success;
 import org.springframework.http.ResponseEntity;
@@ -16,12 +15,12 @@ public class TagController {
 
     private final TagServiceImpl tagService;
 
-    public TagController(TagServiceImpl tagService){
+    public TagController(TagServiceImpl tagService) {
         this.tagService = tagService;
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllTags(){
+    public ResponseEntity<?> getAllTags() {
         return Success.OK("Successfully Retrieved all Tags", tagService.getAllTags());
     }
 

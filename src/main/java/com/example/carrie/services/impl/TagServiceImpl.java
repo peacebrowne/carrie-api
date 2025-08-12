@@ -21,8 +21,7 @@ public class TagServiceImpl {
   private static final Logger log = LoggerFactory.getLogger(TagServiceImpl.class);
 
   public TagServiceImpl(
-          TagMapper tagMapper
-         ) {
+      TagMapper tagMapper) {
     this.tagMapper = tagMapper;
   }
 
@@ -41,12 +40,6 @@ public class TagServiceImpl {
         // Create a new Tag if the tag does not already exist
         Tag newTag = new Tag();
         newTag.setName(name);
-
-        System.out.println(
-                """
-                        "===TESTING==="
-                        """
-        );
 
         tags.add(existingTag.orElseGet(() -> tagMapper.addTags(newTag)));
 
@@ -85,9 +78,12 @@ public class TagServiceImpl {
   protected List<String> getArticleTags(String articleID) {
     try {
 
-        // Iterate through the list of article objects and return a list of names for each article
-        // Return the tag name
-        return tagMapper.getArticleTags(articleID).stream().map(Tag::getName).collect(Collectors.toList());
+      /*
+       * Iterate through the list of article objects and return a list of names for
+       * each article
+       * Return the tag name
+       */
+      return tagMapper.getArticleTags(articleID).stream().map(Tag::getName).collect(Collectors.toList());
 
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -142,8 +138,23 @@ public class TagServiceImpl {
     }
   }
 
-  protected void addAuthorInterest(String authorID, List<Tag> interests){
-    try{
+  protected void deleteAuthorInterest(String authorID) {
+    try {
+      /*
+       * Delete the ArticleTag mapping into the database to disassociate the tag with
+       * the article
+       */
+      tagMapper.deleteAuthorInterest(authorID);
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+          "An unexpected error occurred while deleting an Author Interest.");
+
+    }
+  }
+
+  protected void addAuthorInterest(String authorID, List<Tag> interests) {
+    try {
       interests.forEach(interest -> {
 
         /*
@@ -153,22 +164,69 @@ public class TagServiceImpl {
         tagMapper.addAuthorInterest(authorID, interest.getId());
 
       });
-    }catch (Exception e){
+    } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
-              "An unexpected error occurred while creating an account."
-      );
+          "An unexpected error occurred while creating an account.");
+    }
+  }
+
+  protected List<String> editAuthorInterest(String authorID, List<String> interests) {
+
+    // Retrieve all the tags associated with the article by ID
+    Optional<List<String>> interestToUpdate = Optional.ofNullable(interests);
+
+    // Check if the tags to be updated are provided.
+    if (interestToUpdate.isPresent()) {
+
+      // Add the tags if id does not exist
+      List<Tag> updatedInterest = addTags(interestToUpdate.get());
+
+      /*
+       * Delete the Author Interest mapping into the database to disassociate the tag
+       * with the article
+       */
+      deleteAuthorInterest(authorID);
+
+      /*
+       * Insert the new Author Interest mapping into the database to associate the tag
+       * with the article
+       */
+      addAuthorInterest(authorID, updatedInterest);
+
+      return interestToUpdate.get();
+
+    }
+    return interests;
+
+  }
+
+  protected List<String> getAuthorInterest(String authorID) {
+    try {
+
+      /*
+       * Iterate through the list of author objects and return a list of names for
+       * each author
+       * Return the tag name
+       */
+      return tagMapper.getAuthorTags(authorID).stream().map(Tag::getName).collect(Collectors.toList());
+
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+          "An unexpected error occurred while fetching the Author Tags.");
+
     }
   }
 
   public List<Tag> getAllTags() {
-    try{
+    try {
       return tagMapper.getAll();
-    }catch(Exception e){
+    } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
-              "An unexpected error occurred while getting all tags"
-      );
+          "An unexpected error occurred while getting all tags");
     }
   }
+
 }

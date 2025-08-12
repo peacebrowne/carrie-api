@@ -40,16 +40,14 @@ public class AuthorController {
 
     @GetMapping("/{id}/followers")
     public ResponseEntity<?> getAuthorFollowers(
-            @PathVariable String id
-    ){
+            @PathVariable String id) {
         CustomDto followers = authorServiceImpl.getAuthorFollowers(id);
         return Success.OK("Successfully Retrieved author followers", followers);
     }
 
     @GetMapping("/{id}/followed")
     public ResponseEntity<?> getFollowedAuthors(
-            @PathVariable String id
-    ){
+            @PathVariable String id) {
         List<Author> followers = authorServiceImpl.getFollowedAuthors(id);
         return Success.OK("Successfully Retrieved author followers", followers);
     }
@@ -57,24 +55,26 @@ public class AuthorController {
     @PostMapping("/follow")
     public ResponseEntity<?> addAuthorFollower(
             @RequestParam String follower,
-            @RequestParam String author
-    ){
-        Map<String, Object> data =  authorServiceImpl.followAuthor(follower, author);
+            @RequestParam String author) {
+        Map<String, Object> data = authorServiceImpl.followAuthor(follower, author);
         return Success.CREATED("Successfully Added Author follower", data);
     }
 
     @DeleteMapping("/unfollow")
     public ResponseEntity<?> removeAuthorFollower(
             @RequestParam String follower,
-            @RequestParam String author
-    ){
-        Map<String, Object> data =  authorServiceImpl.unfollowAuthor(follower, author);
+            @RequestParam String author) {
+        Map<String, Object> data = authorServiceImpl.unfollowAuthor(follower, author);
         return Success.CREATED("Successfully Added Author follower", data);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> editAuthor(
             @RequestBody Author author, @PathVariable String id) {
+
+        System.out.println("\n\n");
+        System.out.println(id);
+        System.out.println("\n\n");
 
         Author editedAuthor = authorServiceImpl.editAuthor(author, id);
         List<Author> data = Collections.singletonList(editedAuthor);

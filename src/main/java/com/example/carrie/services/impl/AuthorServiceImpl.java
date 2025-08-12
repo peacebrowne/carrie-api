@@ -19,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 import org.slf4j.Logger;
@@ -36,8 +37,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     public AuthorServiceImpl(
             AuthorMapper authorMapper,
             ImageMapper imageMapper,
-            TagMapper tagMapper
-            ) {
+            TagMapper tagMapper) {
         super(imageMapper);
         this.authorMapper = authorMapper;
         tagServiceImpl = new TagServiceImpl(tagMapper);
@@ -47,8 +47,20 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     public Author getAuthorById(String id) {
         try {
 
+            // Validate the existence of the author using its ID and return the article if
+            // it exists.
             validateAuthor(id);
-            return authorMapper.findById(id);
+
+            // Retrieve the list of tags associated with the article
+            List<String> authorInterest = tagServiceImpl.getAuthorInterest(id);
+
+            Author author = authorMapper.findById(id);
+
+            // Set the retrieved tags to the article
+            author.setInterests(authorInterest);
+
+            // Return the article with its associated tags
+            return author;
 
         } catch (BadRequest | NotFound e) {
             log.error("ERROR: {}", e.getMessage(), e);
@@ -88,7 +100,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
                 throw new BadRequest("Author already exist.");
 
             Optional<Author> usernameExist = authorMapper.findByEmailOrUsername(author.getUsername());
-            if(usernameExist.isPresent())
+            if (usernameExist.isPresent())
                 throw new Conflict("Username already exist.");
 
             author.setPassword(encoder.encode(author.getPassword()));
@@ -145,7 +157,21 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
             Optional.ofNullable(author.getMsisdn()).ifPresent(existingAuthor::setMsisdn);
             Optional.ofNullable(author.getBiography()).ifPresent(existingAuthor::setBiography);
 
-            return authorMapper.editAuthor(existingAuthor);
+            // Set the current timestamp as the updated date for the article
+            LocalDateTime currentDate = LocalDateTime.now();
+            existingAuthor.setUpdatedAt(currentDate);
+
+            // Update Author
+            authorMapper.editAuthor(existingAuthor);
+
+            // Update the author's interests with the new list and return the updated
+            // interest names
+            List<String> interestNames = tagServiceImpl.editAuthorInterest(id, author.getInterests());
+
+            // Set the updated tags to the existing author
+            existingAuthor.setInterests(interestNames);
+
+            return existingAuthor;
         } catch (BadRequest | NotFound e) {
             log.error("Bad Request: {}", e.getMessage(), e);
             throw e;
@@ -181,7 +207,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
 
     @Override
     public Map<String, Object> followAuthor(String follower, String author) {
-        try{
+        try {
 
             validateAuthorFollower(follower, author);
             Map<String, Object> data = authorMapper.getSingleAuthorFollower(
@@ -193,7 +219,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
                         + author + "'");
 
             return authorMapper.followAuthor(follower, author);
-            
+
         } catch (BadRequest | Conflict | NotFound e) {
             log.error("Validation Error: {}", e.getMessage(), e);
             throw e;
@@ -205,10 +231,10 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
 
     @Override
     public Map<String, Object> unfollowAuthor(String follower, String author) {
-        try{
+        try {
             validateAuthorFollower(follower, author);
             return authorMapper.unfollowAuthor(follower, author);
-        }catch (BadRequest | Conflict | NotFound e) {
+        } catch (BadRequest | Conflict | NotFound e) {
             log.error("Validation Error: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
@@ -225,8 +251,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
             List<Map<String, Object>> authorFollowers = authorMapper.getAuthorFollowers(id);
             return new CustomDto((long) authorFollowers.size(), authorFollowers);
 
-        }
-        catch (BadRequest | NotFound e) {
+        } catch (BadRequest | NotFound e) {
             log.error("Validation Error: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
@@ -239,10 +264,10 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     @Override
     public List<Author> getFollowedAuthors(String id) {
 
-        try{
+        try {
             validateAuthor(id);
             return authorMapper.getFollowedAuthors(id);
-        }catch (BadRequest | NotFound e) {
+        } catch (BadRequest | NotFound e) {
             log.error("Validation Error: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
@@ -252,8 +277,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
         }
     }
 
-
-    private void validateAuthorFollower (String followerAuthor, String followedAuthor){
+    private void validateAuthorFollower(String followerAuthor, String followedAuthor) {
         Arrays.asList(followerAuthor, followedAuthor).forEach(this::getAuthorById);
     }
 
@@ -274,5 +298,5 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
         }
     }
 
-    //    TODO - VALIDATE MSISDN
+    // TODO - VALIDATE MSISDN
 }
