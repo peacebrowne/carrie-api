@@ -55,9 +55,9 @@ public class Comment {
    */
   private LocalDateTime updatedAt;
 
-  private Long totalLikes = 0L;
+  private Long likes = 0L;
 
-  private Long totalDislikes = 0L;
+  private Long dislikes = 0L;
 
   private Long totalReplies = 0L;
 

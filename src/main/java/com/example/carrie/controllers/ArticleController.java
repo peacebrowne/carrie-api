@@ -39,11 +39,9 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
     CustomDto data = articleServiceImpl.getAllArticles(
-            sort, limit, start, status, startDate, endDate
-    );
+        sort, limit, start, status, startDate, endDate);
     return Success.OK("Successfully Retrieved all Articles.", data);
   }
-
 
   @GetMapping("/{id}/article-analytics")
   public ResponseEntity<?> getArticleAnalytics(@PathVariable String id) {
@@ -51,10 +49,10 @@ public class ArticleController {
     return Success.OK("Successfully Retrieved Article Analytics", data);
   }
 
-
   @GetMapping("/tag/{tag}")
-  public ResponseEntity<?> getArticleByTags(@PathVariable String tag, @RequestParam(required = false, defaultValue = "10") Long limit,
-                                            @RequestParam(required = false, defaultValue = "0") Long start){
+  public ResponseEntity<?> getArticleByTags(@PathVariable String tag,
+      @RequestParam(required = false, defaultValue = "10") Long limit,
+      @RequestParam(required = false, defaultValue = "0") Long start) {
     CustomDto data = articleServiceImpl.getArticleByTag(tag, limit, start);
     return Success.OK("Successfully Retrieved Article with tags", data);
   }
@@ -76,8 +74,7 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
     CustomDto data = articleServiceImpl.getAuthorsArticles(
-            id, sort, limit, start, status, startDate, endDate
-    );
+        id, sort, limit, start, status, startDate, endDate);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 
@@ -92,8 +89,7 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
     CustomDto data = articleServiceImpl.searchArticles(
-            term, id, sort, limit, start, status, startDate, endDate
-    );
+        term, id, sort, limit, start, status, startDate, endDate);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 
@@ -108,8 +104,7 @@ public class ArticleController {
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
     CustomDto data = articleServiceImpl.searchArticles(
-            term, null, sort, limit, start, status, startDate, endDate
-            );
+        term, null, sort, limit, start, status, startDate, endDate);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 
@@ -130,9 +125,9 @@ public class ArticleController {
 
   @PutMapping("/{id}")
   public ResponseEntity<?> editArticle(
-          @RequestPart Article article,
-          @RequestPart(required = false) MultipartFile image,
-          @PathVariable String id
+      @RequestPart Article article,
+      @RequestPart(required = false) MultipartFile image,
+      @PathVariable String id
 
   ) {
 
@@ -159,15 +154,15 @@ public class ArticleController {
   @GetMapping("/shares/{articleId}")
   public ResponseEntity<?> getShares(@PathVariable String articleId) {
     return Success.OK("Successfully retrieved shared article",
-            articleServiceImpl.getSharesByArticle(articleId));
+        articleServiceImpl.getSharesByArticle(articleId));
   }
 
   @GetMapping("/author/{id}/interests")
   public ResponseEntity<?> getArticlesByAuthorInterest(@PathVariable String id,
-          @RequestParam(required = false, defaultValue = "10") Long limit,
-          @RequestParam(required = false, defaultValue = "0") Long start){
+      @RequestParam(required = false, defaultValue = "10") Long limit,
+      @RequestParam(required = false, defaultValue = "0") Long start) {
     return Success.OK("Successfully Retrieved Author Interested Articles",
-            articleServiceImpl.getArticlesByAuthorInterest(id, limit, start));
+        articleServiceImpl.getAuthorsInterestedArticles(id, limit, start));
   }
 
 }

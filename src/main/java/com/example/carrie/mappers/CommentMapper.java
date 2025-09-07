@@ -21,8 +21,8 @@ public interface CommentMapper {
       "comments cm " +
       "WHERE " +
       "cm.parentCommentID = c.id), " +
-      "SUM(cl.likes) AS totalLikes, " +
-      "SUM(cl.dislikes) AS totalDislikes " +
+      "SUM(cl.likes) AS likes, " +
+      "SUM(cl.dislikes) AS dislikes " +
       "FROM " +
       "comments c " +
       "LEFT JOIN " +
@@ -44,8 +44,8 @@ public interface CommentMapper {
       "comments cm " +
       "WHERE " +
       "cm.parentCommentID = c.id), " +
-      "SUM(cl.likes) AS totalLikes, " +
-      "SUM(cl.dislikes) AS totalDislikes " +
+      "SUM(cl.likes) AS likes, " +
+      "SUM(cl.dislikes) AS dislikes " +
       "FROM " +
       "comments c " +
       "LEFT JOIN " +

@@ -70,9 +70,9 @@ public class Article {
    */
   private List<String> tags;
 
-  private Long totalLikes = 0L;
+  private Long likes = 0L;
 
-  private Long totalDislikes = 0L;
+  private Long dislikes = 0L;
 
   private Long totalComments = 0L;
 

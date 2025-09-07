@@ -52,7 +52,8 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
     try {
 
-      // Validate the existence of the article using its ID and return the article if it exists.
+      // Validate the existence of the article using its ID and return the article if
+      // it exists.
       Article article = validateArticle(id);
 
       // Retrieve the list of tags associated with the article
@@ -77,27 +78,24 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
   @Override
   public CustomDto getAllArticles(
-          String sort,
-          Long limit,
-          Long start,
-          String status,
-          String startDate,
-          String endDate
-  ) {
+      String sort,
+      Long limit,
+      Long start,
+      String status,
+      String startDate,
+      String endDate) {
 
     try {
 
       // Get total count for all articles
       Long total = articleMapper.totalArticles(
-              null, null, sort, status,
-              formatDateTime(startDate), formatDateTime(endDate)
-      );
+          null, null, sort, status,
+          formatDateTime(startDate), formatDateTime(endDate));
 
       // Get all articles
       List<Article> articles = articleMapper.findAll(
-              sort, limit, start, status,
-              formatDateTime(startDate), formatDateTime(endDate)
-      );
+          sort, limit, start, status,
+          formatDateTime(startDate), formatDateTime(endDate));
 
       // Add related tags to articles
       articles.forEach(article -> {
@@ -166,15 +164,13 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
   @Override
   public CustomDto getAuthorsArticles(
-          String authorID,
-          String sort,
-          Long limit,
-          Long start,
-          String status,
-          String startDate,
-          String endDate
-  )
-  {
+      String authorID,
+      String sort,
+      Long limit,
+      Long start,
+      String status,
+      String startDate,
+      String endDate) {
     try {
 
       // Validate Author
@@ -182,15 +178,48 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
       // Get total articles for a particular author by the ID
       Long total = articleMapper.totalArticles(
-              null, authorID, sort, status,
-              formatDateTime(startDate), formatDateTime(endDate)
-      );
+          null, authorID, sort, status,
+          formatDateTime(startDate), formatDateTime(endDate));
 
       // Get all articles associated with an author by ID
       List<Article> articles = articleMapper.findAuthorsArticles(
-              authorID, sort, limit, start, status,
-              formatDateTime(startDate), formatDateTime(endDate)
-      );
+          authorID, sort, limit, start, status,
+          formatDateTime(startDate), formatDateTime(endDate));
+
+      // Add related tags to articles
+      articles.forEach(article -> {
+        article.setTags(getArticleTags(article.getId()));
+      });
+
+      // Encapsulate the total count and the list of an Author's article
+      return new CustomDto(total, articles);
+
+    } catch (NotFound e) {
+      log.error("Not Found: {}", e.getMessage(), e);
+      throw e;
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+          "An unexpected error occurred while fetching an Author's Article.");
+    }
+
+  }
+
+  @Override
+  public CustomDto getAuthorsInterestedArticles(
+      String authorID,
+      Long limit,
+      Long start) {
+    try {
+
+      // Validate Author
+      validateAuthor(authorID);
+
+      // Get total articles for a particular author by the ID
+      Long total = articleMapper.totalAuthorInterestArticles(authorID);
+
+      // Get all articles associated with an author by ID
+      List<Article> articles = articleMapper.findAuthorInterestedArticles(authorID, limit, start);
 
       // Add related tags to articles
       articles.forEach(article -> {
@@ -275,28 +304,25 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
   @Override
   public CustomDto searchArticles(
-          String term,
-          String authorID,
-          String sort,
-          Long limit,
-          Long start,
-          String status,
-          String startDate,
-          String endDate
-  )
-  {
+      String term,
+      String authorID,
+      String sort,
+      Long limit,
+      Long start,
+      String status,
+      String startDate,
+      String endDate) {
     try {
       if (authorID != null && !UUIDValidator.isValidUUID(authorID))
         throw new BadRequest("Invalid Author ID");
 
       Long total = articleMapper.totalArticles(
-              term, authorID, sort, status,
-              formatDateTime(startDate), formatDateTime(endDate)
-      );
+          term, authorID, sort, status,
+          formatDateTime(startDate), formatDateTime(endDate));
 
       List<Article> articles = articleMapper.search(
-              term, authorID, sort, limit, start, status,
-              formatDateTime(startDate), formatDateTime(endDate));
+          term, authorID, sort, limit, start, status,
+          formatDateTime(startDate), formatDateTime(endDate));
 
       // Add related tags to articles
       articles.forEach(article -> {
@@ -317,9 +343,8 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   }
 
   @Override
-  public List<Article> getArticlesByAuthorInterest(String authorID, Long limit, Long start)
-  {
-    try{
+  public List<Article> getArticlesByAuthorInterest(String authorID, Long limit, Long start) {
+    try {
       validateAuthor(authorID);
 
       List<Article> articles = articleMapper.findArticlesByAuthorInterest(authorID, limit, start);
@@ -330,13 +355,13 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       });
 
       return articles;
-    }catch (BadRequest e) {
+    } catch (BadRequest e) {
       log.error("Bad Request: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
-              "An unexpected error occurred while fetching Articles based on Author's Interest.");
+          "An unexpected error occurred while fetching Articles based on Author's Interest.");
     }
 
   }
@@ -375,23 +400,23 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   }
 
   private void validateArticleStatus(String status) {
-      ArticleStatus articleStatus = ArticleStatus.valueOf(status.toUpperCase());
+    ArticleStatus articleStatus = ArticleStatus.valueOf(status.toUpperCase());
 
-      if (!Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.PENDING, ArticleStatus.PUBLISHED).contains(articleStatus)) {
-        String validStatuses = Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.PENDING, ArticleStatus.PUBLISHED)
-                .toString();
-        throw new BadRequest("Invalid Article status. It should be one of: " + validStatuses);
-      }
+    if (!Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.PENDING, ArticleStatus.PUBLISHED).contains(articleStatus)) {
+      String validStatuses = Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.PENDING, ArticleStatus.PUBLISHED)
+          .toString();
+      throw new BadRequest("Invalid Article status. It should be one of: " + validStatuses);
+    }
   }
 
-  private LocalDateTime formatDateTime (String datetime){
+  private LocalDateTime formatDateTime(String datetime) {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    return datetime != null ? LocalDateTime.parse(datetime,formatter) : null;
+    return datetime != null ? LocalDateTime.parse(datetime, formatter) : null;
   }
 
   @Override
   public CustomDto getArticleByTag(String tag, Long limit, Long start) {
-    try{
+    try {
       Long total = articleMapper.totalTagArticles(tag);
 
       List<Article> articles = articleMapper.findByTag(tag, limit, start);
@@ -406,22 +431,22 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
-              "An unexpected error occurred while fetching an Article by Tag.");
+          "An unexpected error occurred while fetching an Article by Tag.");
     }
   }
 
   @Override
   public Map<String, Object> getArticleAnalytics(String id) {
-      try {
-        Map<String, Object> analyticsDto = articleMapper.getTotalArticleAnalytics(id);
-        System.out.println(analyticsDto);
+    try {
+      Map<String, Object> analyticsDto = articleMapper.getTotalArticleAnalytics(id);
+      System.out.println(analyticsDto);
 
-        return analyticsDto;
-      } catch (Exception e) {
-        log.error("Internal Server Error: {}", e.getMessage(), e);
-        throw new InternalServerError(
-                "An unexpected error occurred while fetching Article Analytics.");
-      }
+      return analyticsDto;
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+          "An unexpected error occurred while fetching Article Analytics.");
+    }
   }
 
   public Map<String, Object> shareArticle(String articleId, String sharedBy) {
@@ -431,13 +456,13 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       validateAuthor(sharedBy);
       return articleMapper.shareArticle(articleId, sharedBy);
 
-    }catch (BadRequest | NotFound e) {
+    } catch (BadRequest | NotFound e) {
       log.error("Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
-              "An unexpected error occurred while sharing an Article.");
+          "An unexpected error occurred while sharing an Article.");
     }
   }
 
@@ -447,13 +472,13 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       validateArticle(articleId);
       return articleMapper.getSharesByArticle(articleId);
 
-    }catch (BadRequest | NotFound e) {
+    } catch (BadRequest | NotFound e) {
       log.error("Error: {}", e.getMessage(), e);
       throw e;
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
-              "An unexpected error occurred while fetching shared Articles.");
+          "An unexpected error occurred while fetching shared Articles.");
     }
   }
 }

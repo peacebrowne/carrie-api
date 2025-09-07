@@ -9,26 +9,28 @@ import java.util.List;
 import java.util.Map;
 
 public interface ArticleService {
-  public Article getArticleById(String id);
+    public Article getArticleById(String id);
 
-  public CustomDto getAllArticles(String sort, Long limit, Long start, String status, String startDate, String endDate);
+    public CustomDto getAllArticles(String sort, Long limit, Long start, String status, String startDate,
+            String endDate);
 
-  public Article addArticle(Article article, MultipartFile image);
+    public Article addArticle(Article article, MultipartFile image);
 
-  public CustomDto getAuthorsArticles(String authorID, String sort, Long limit, Long start, String status, String startDate, String endDate);
+    public CustomDto getAuthorsArticles(String authorID, String sort, Long limit, Long start, String status,
+            String startDate, String endDate);
 
-  public Article editArticle(Article article, MultipartFile image, String id);
+    public CustomDto getAuthorsInterestedArticles(String authorID, Long limit, Long start);
 
-  public Article deleteArticle(String id);
+    public Article editArticle(Article article, MultipartFile image, String id);
 
-  public CustomDto searchArticles(String term, String authorID, String sort, Long limit, Long start, String status, String startDate, String endDate);
+    public Article deleteArticle(String id);
 
-    List<Article> getArticlesByAuthorInterest(String authorID,
-                                              Long limit,
-                                              Long start
-                                         );
+    public CustomDto searchArticles(String term, String authorID, String sort, Long limit, Long start, String status,
+            String startDate, String endDate);
+
+    List<Article> getArticlesByAuthorInterest(String authorID, Long limit, Long start);
 
     public CustomDto getArticleByTag(String tag, Long limit, Long start);
 
-  Map<String, Object> getArticleAnalytics(String id);
+    Map<String, Object> getArticleAnalytics(String id);
 }
