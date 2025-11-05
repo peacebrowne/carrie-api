@@ -72,10 +72,6 @@ public class AuthorController {
     public ResponseEntity<?> editAuthor(
             @RequestBody Author author, @PathVariable String id) {
 
-        System.out.println("\n\n");
-        System.out.println(id);
-        System.out.println("\n\n");
-
         Author editedAuthor = authorServiceImpl.editAuthor(author, id);
         List<Author> data = Collections.singletonList(editedAuthor);
 

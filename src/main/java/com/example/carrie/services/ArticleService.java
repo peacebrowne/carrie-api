@@ -1,5 +1,6 @@
 package com.example.carrie.services;
 
+import com.example.carrie.dto.ReadingList;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.carrie.dto.CustomDto;
@@ -9,28 +10,37 @@ import java.util.List;
 import java.util.Map;
 
 public interface ArticleService {
-    public Article getArticleById(String id);
+    Article getArticleById(String id);
 
-    public CustomDto getAllArticles(String sort, Long limit, Long start, String status, String startDate,
+     CustomDto getAllArticles(String sort, Long limit, Long start, String status, String startDate,
             String endDate);
 
-    public Article addArticle(Article article, MultipartFile image);
+     Article addArticle(Article article, MultipartFile image);
 
-    public CustomDto getAuthorsArticles(String authorID, String sort, Long limit, Long start, String status,
+     CustomDto getAuthorsArticles(String authorID, String sort, Long limit, Long start, String status,
             String startDate, String endDate);
 
-    public CustomDto getAuthorsInterestedArticles(String authorID, Long limit, Long start);
+     CustomDto getAuthorsInterestedArticles(String authorID, Long limit, Long start);
 
-    public Article editArticle(Article article, MultipartFile image, String id);
+     Article editArticle(Article article, MultipartFile image, String id);
 
-    public Article deleteArticle(String id);
+     Article deleteArticle(String id);
 
-    public CustomDto searchArticles(String term, String authorID, String sort, Long limit, Long start, String status,
+     CustomDto searchArticles(String term, String authorID, String sort, Long limit, Long start, String status,
             String startDate, String endDate);
 
     List<Article> getArticlesByAuthorInterest(String authorID, Long limit, Long start);
 
-    public CustomDto getArticleByTag(String tag, Long limit, Long start);
+    ReadingList getReadingListEntry(String authorId, String articleId);
+
+    CustomDto getArticleByTag(String tag, Long limit, Long start);
 
     Map<String, Object> getArticleAnalytics(String id);
+
+    ReadingList addToReadingList(String authorId, String articleId);
+
+    CustomDto getUserReadingList(String authorId);
+
+    ReadingList removeFromReadingList(String authorId, String articleId);
+
 }

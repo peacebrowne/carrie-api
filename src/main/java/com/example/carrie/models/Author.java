@@ -15,7 +15,7 @@ import lombok.Data;
 @Data
 public class Author {
 
-//    @Getter(AccessLevel.NONE)
+    // @Getter(AccessLevel.NONE)
     private String password;
 
     /*
@@ -72,7 +72,7 @@ public class Author {
     /**
      * List of topics that the author has interest in reading
      * Tags/Categories ids.
-     * */
+     */
     private List<String> interests;
 
     /*
@@ -93,6 +93,8 @@ public class Author {
 
     private String biography;
 
-   
+    private Long followers = 0L;
+
+    private Long following = 0L;
 
 }

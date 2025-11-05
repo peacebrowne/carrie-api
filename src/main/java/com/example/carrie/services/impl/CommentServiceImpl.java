@@ -10,9 +10,9 @@ import com.example.carrie.mappers.AuthorMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.carrie.errors.custom.BadRequest;
-import com.example.carrie.errors.custom.NotFound;
-import com.example.carrie.errors.custom.InternalServerError;
+import com.example.carrie.exceptions.custom.BadRequest;
+import com.example.carrie.exceptions.custom.NotFound;
+import com.example.carrie.exceptions.custom.InternalServerError;
 import com.example.carrie.mappers.ArticleMapper;
 import com.example.carrie.mappers.CommentMapper;
 import com.example.carrie.dto.CustomDto;
@@ -86,21 +86,16 @@ public class CommentServiceImpl implements CommentService {
     try {
 
       // Validate parent comment ID if present
-      Optional.ofNullable(comment.getParentCommentID()).ifPresent(parentCommentID -> {
-        validateComment(comment.getParentCommentID(), "Invalid Parent Comment ID");
-      });
+      Optional.ofNullable(comment.getParentCommentID()).ifPresent(parentCommentID -> validateComment(comment.getParentCommentID(), "Invalid Parent Comment ID"));
 
       // Validate parent comment ID if present
-      Optional.ofNullable(comment.getArticleID()).ifPresent(articleID -> {
-        validateArticle(comment.getArticleID());
-      });
+      Optional.ofNullable(comment.getArticleID()).ifPresent(articleID -> validateArticle(comment.getArticleID()));
 
       // Ensure the author and article exist
       validateAuthor(comment.getAuthorID());
 
       // Save the comment
-      Comment createdComment = commentMapper.addComment(comment);
-      return createdComment;
+        return commentMapper.addComment(comment);
 
     } catch (BadRequest | NotFound e) {
       log.error("Validation Error: {}", e.getMessage(), e);
@@ -130,7 +125,7 @@ public class CommentServiceImpl implements CommentService {
       });
 
       // Update content if provided
-      Optional.ofNullable(comment.getContent()).ifPresent(content -> existingComment.setContent(content));
+      Optional.ofNullable(comment.getContent()).ifPresent(existingComment::setContent);
 
       // Update the timestamp
       existingComment.setUpdatedAt(LocalDateTime.now());

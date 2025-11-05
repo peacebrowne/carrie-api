@@ -1,6 +1,6 @@
-package com.example.carrie.errors;
+package com.example.carrie.exceptions;
 
-import com.example.carrie.errors.custom.*;
+import com.example.carrie.exceptions.custom.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

@@ -1,6 +1,7 @@
 package com.example.carrie.controllers;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.carrie.dto.CustomDto;
 import com.example.carrie.models.Article;
-import com.example.carrie.errors.custom.BadRequest;
+import com.example.carrie.exceptions.custom.BadRequest;
 import com.example.carrie.services.impl.ArticleServiceImpl;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -118,7 +119,7 @@ public class ArticleController {
       throw new BadRequest(result.getAllErrors().get(0).getDefaultMessage());
     }
 
-    List<Article> data = Collections.singletonList(articleServiceImpl.addArticle(article, image));
+    Article data = articleServiceImpl.addArticle(article, image);
     return Success.CREATED("Successfully Created Article.", data);
 
   }
@@ -128,12 +129,22 @@ public class ArticleController {
       @RequestPart Article article,
       @RequestPart(required = false) MultipartFile image,
       @PathVariable String id
-
   ) {
 
-    System.out.println("===HERE===");
     Article data = articleServiceImpl.editArticle(article, image, id);
     return Success.OK("Successfully Updated Article.", data);
+  }
+
+  @PutMapping("/{id}/publish-now")
+  public ResponseEntity<?> publishArticleNow(@PathVariable String id){
+       articleServiceImpl.publishArticle(id);
+      return Success.OK("Article Successfully Published", true);
+  }
+
+  @PutMapping("/{id}/publish-later")
+    public ResponseEntity<?> publishArticleLater(@PathVariable String id, @RequestParam String date){
+        Date scheduledDate = articleServiceImpl.publishArticleLater(id, date);
+        return Success.OK("Article Successfully Published", date);
   }
 
   @DeleteMapping("/{id}")
@@ -164,5 +175,28 @@ public class ArticleController {
     return Success.OK("Successfully Retrieved Author Interested Articles",
         articleServiceImpl.getAuthorsInterestedArticles(id, limit, start));
   }
+
+    // CREATE - Add to reading list
+    @PostMapping("/saved/{authorId}/{articleId}")
+    public ResponseEntity<?> addToReadingList(
+            @PathVariable String authorId, @PathVariable String articleId) {
+      return Success.OK("Successfully Added To Reading List",
+         articleServiceImpl.addToReadingList(authorId, articleId));
+    }
+
+    // READ - Get all saved articles for a user
+    @GetMapping("/saved/{authorId}")
+    public ResponseEntity<?> getUserReadingList(@PathVariable String authorId) {
+      return Success.OK("Successfully Retrieved To Reading List",
+            articleServiceImpl.getUserReadingList(authorId));
+    }
+
+    // DELETE - Remove by readingListId
+    @DeleteMapping("/unsave/{authorId}/{articleId}")
+    public ResponseEntity<?>  removeFromReadingList(
+            @PathVariable String authorId, @PathVariable String articleId) {
+        return Success.OK("Successfully removed from reading list",
+                articleServiceImpl.removeFromReadingList(authorId, articleId));
+    }
 
 }

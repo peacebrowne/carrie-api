@@ -53,8 +53,6 @@ public class Article {
    * characters long.
    * It must not be empty.
    */
-  // @Size(min = 5, max = 100, message = "Article description must be at least 5
-  // characters and no more than 100 characters.")
   private String description;
 
   /*

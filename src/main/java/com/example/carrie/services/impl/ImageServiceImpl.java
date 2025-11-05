@@ -10,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.carrie.models.Image;
-import com.example.carrie.errors.custom.BadRequest;
-import com.example.carrie.errors.custom.InternalServerError;
+import com.example.carrie.exceptions.custom.BadRequest;
+import com.example.carrie.exceptions.custom.InternalServerError;
 import com.example.carrie.mappers.ImageMapper;
 
 @Service
@@ -78,7 +78,6 @@ public class ImageServiceImpl {
 
         return imageMapper.editImage(img.getName(), img.getTargetID(), img.getType(), img.getData(), existingImage.getId());
       }
-
 
     } catch (BadRequest | IOException e) {
       log.error("Bad image format: {}", e.getMessage(), e);

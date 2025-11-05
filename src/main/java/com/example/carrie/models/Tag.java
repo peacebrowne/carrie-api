@@ -19,6 +19,16 @@ public class Tag {
    */
   private String name;
 
+  /*
+  * Tag total popularity.
+  * This field stores the total number authors associated with the tag.
+  */
+  private Long popularity = 0L;
 
+  /*
+  * Tag total stories.
+  * This field stores the total number articles associated with the tag.
+  */
+  private Long stories = 0L;
 
 }

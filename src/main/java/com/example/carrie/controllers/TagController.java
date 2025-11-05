@@ -3,25 +3,39 @@ package com.example.carrie.controllers;
 import com.example.carrie.services.impl.TagServiceImpl;
 import com.example.carrie.success.Success;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("api/tags")
 @RestController
 @CrossOrigin
 public class TagController {
 
-    private final TagServiceImpl tagService;
+    private final TagServiceImpl tagServiceImpl;
 
-    public TagController(TagServiceImpl tagService) {
-        this.tagService = tagService;
+    public TagController(TagServiceImpl tagServiceImpl) {
+        this.tagServiceImpl = tagServiceImpl;
     }
 
     @GetMapping
     public ResponseEntity<?> getAllTags() {
-        return Success.OK("Successfully Retrieved all Tags", tagService.getAllTags());
+        return Success.OK("Successfully Retrieved all Tags", tagServiceImpl.getAllTags());
+    }
+
+    @GetMapping("/recommended/{authorID}")
+    public ResponseEntity<?> getRecommendedTags(@PathVariable String authorID){
+        return Success.OK("Successfully Retrieved Recommended Topics",
+                tagServiceImpl.recommendedInterests(authorID));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTagById(@PathVariable String id){
+        return Success.OK("Successfully Retrieved Tag", tagServiceImpl.getTagById(id));
+    }
+
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchTags(@RequestParam String term){
+        return Success.OK("Successfully Retrieved searched tags", tagServiceImpl.searchTags(term));
     }
 
 }

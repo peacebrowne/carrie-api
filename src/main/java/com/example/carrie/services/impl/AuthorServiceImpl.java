@@ -4,10 +4,10 @@ import com.example.carrie.dto.CustomDto;
 import com.example.carrie.mappers.ImageMapper;
 import com.example.carrie.mappers.TagMapper;
 import com.example.carrie.models.Author;
-import com.example.carrie.errors.custom.BadRequest;
-import com.example.carrie.errors.custom.Conflict;
-import com.example.carrie.errors.custom.InternalServerError;
-import com.example.carrie.errors.custom.NotFound;
+import com.example.carrie.exceptions.custom.BadRequest;
+import com.example.carrie.exceptions.custom.Conflict;
+import com.example.carrie.exceptions.custom.InternalServerError;
+import com.example.carrie.exceptions.custom.NotFound;
 
 import com.example.carrie.mappers.AuthorMapper;
 import com.example.carrie.models.Tag;
@@ -32,7 +32,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     private final AuthorMapper authorMapper;
     private static final Logger log = LoggerFactory.getLogger(AuthorServiceImpl.class);
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
-    private TagServiceImpl tagServiceImpl = null;
+    private final TagServiceImpl tagServiceImpl;
 
     public AuthorServiceImpl(
             AuthorMapper authorMapper,

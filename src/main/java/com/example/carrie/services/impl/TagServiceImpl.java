@@ -5,18 +5,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.example.carrie.exceptions.custom.BadRequest;
+import com.example.carrie.services.TagService;
+import com.example.carrie.utils.validations.UUIDValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.carrie.models.Tag;
-import com.example.carrie.errors.custom.InternalServerError;
+import com.example.carrie.exceptions.custom.InternalServerError;
 import com.example.carrie.mappers.TagMapper;
 
 @Transactional
 @Service
-public class TagServiceImpl {
+public class TagServiceImpl implements TagService {
   private final TagMapper tagMapper;
   private static final Logger log = LoggerFactory.getLogger(TagServiceImpl.class);
 
@@ -57,14 +60,15 @@ public class TagServiceImpl {
 
   protected void addArticleTags(List<Tag> tags, String articleID) {
     try {
+
       // Iterate over the provided tag names
       tags.forEach(tag -> {
 
         /*
-         * Insert the ArticleTag mapping into the
-         * database to associate the tag with the article
+         * Insert the ArticleTag mapping into the database to associate the tag with the article
          */
         tagMapper.addArticleTag(articleID, tag.getId());
+        tagMapper.updateTagStories(tag.getId());
 
       });
     } catch (Exception e) {
@@ -119,7 +123,7 @@ public class TagServiceImpl {
       return tagsToUpdate.get();
 
     }
-    return tags;
+    return null;
 
   }
 
@@ -197,7 +201,7 @@ public class TagServiceImpl {
       return interestToUpdate.get();
 
     }
-    return interests;
+    return null;
 
   }
 
@@ -219,6 +223,22 @@ public class TagServiceImpl {
     }
   }
 
+  public List<Tag> recommendedInterests(String authorID) {
+      try {
+
+          validateUUID(authorID);
+
+          return tagMapper.getRecommendedTags(authorID);
+
+      } catch (Exception e) {
+          log.error("Internal Server Error: {}", e.getMessage(), e);
+          throw new InternalServerError(
+                  "An unexpected error occurred while fetching the Recommended Tags.");
+
+      }
+  }
+
+  @Override
   public List<Tag> getAllTags() {
     try {
       return tagMapper.getAll();
@@ -228,5 +248,38 @@ public class TagServiceImpl {
           "An unexpected error occurred while getting all tags");
     }
   }
+
+    @Override
+    public Tag getTagById(String id) {
+        try {
+//  TODO - get tag with total popularity and stories
+
+            return tagMapper.getById(id);
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while getting all tags");
+        }
+    }
+
+    @Override
+    public List<Tag> searchTags(String term) {
+        try {
+            return tagMapper.searchTags(term);
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while searching tags");
+        }
+    }
+
+    private void validateUUID(String id) {
+        if (!UUIDValidator.isValidUUID(id)) {
+            throw new BadRequest("Invalid Author ID");
+        }
+    }
+
+//  TODO - update tag with total popularity and stories for
+
 
 }

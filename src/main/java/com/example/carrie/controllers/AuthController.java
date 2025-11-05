@@ -1,6 +1,6 @@
 package com.example.carrie.controllers;
 
-import com.example.carrie.errors.custom.BadRequest;
+import com.example.carrie.exceptions.custom.BadRequest;
 import com.example.carrie.models.Author;
 import com.example.carrie.models.Login;
 import com.example.carrie.services.impl.AuthServiceImpl;

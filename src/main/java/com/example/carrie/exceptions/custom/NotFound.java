@@ -1,4 +1,4 @@
-package com.example.carrie.errors.custom;
+package com.example.carrie.exceptions.custom;
 
 public class NotFound extends RuntimeException {
     public NotFound(String message) {

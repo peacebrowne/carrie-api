@@ -1,4 +1,4 @@
-package com.example.carrie.errors.custom;
+package com.example.carrie.exceptions.custom;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,10 +1,11 @@
 package com.example.carrie.services.impl;
 
+import com.example.carrie.dto.ReadingList;
 import com.example.carrie.enumerators.ArticleStatus;
-import com.example.carrie.errors.custom.BadRequest;
-import com.example.carrie.errors.custom.Conflict;
-import com.example.carrie.errors.custom.InternalServerError;
-import com.example.carrie.errors.custom.NotFound;
+import com.example.carrie.exceptions.custom.BadRequest;
+import com.example.carrie.exceptions.custom.Conflict;
+import com.example.carrie.exceptions.custom.InternalServerError;
+import com.example.carrie.exceptions.custom.NotFound;
 import com.example.carrie.mappers.ArticleMapper;
 import com.example.carrie.mappers.AuthorMapper;
 import com.example.carrie.mappers.ImageMapper;
@@ -33,21 +34,20 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   private final ArticleMapper articleMapper;
   private final AuthorMapper authorMapper;
   private static final Logger log = LoggerFactory.getLogger(ArticleServiceImpl.class);
+  private final TagServiceImpl tagServiceImpl;
+  private final JobServiceImpl jobServiceImpl;
 
-  private TagServiceImpl tagServiceImpl = null;
-
-  public ArticleServiceImpl(
-      ArticleMapper articleMapper,
-      AuthorMapper authorMapper,
-      TagMapper tagMapper,
-      ImageMapper imageMapper) {
+    public ArticleServiceImpl(
+            ArticleMapper articleMapper, AuthorMapper authorMapper,
+            TagMapper tagMapper, ImageMapper imageMapper, JobServiceImpl jobServiceImpl) {
     super(imageMapper);
     this.articleMapper = articleMapper;
     this.authorMapper = authorMapper;
-    tagServiceImpl = new TagServiceImpl(tagMapper);
-  }
+    this.tagServiceImpl = new TagServiceImpl(tagMapper);
+    this.jobServiceImpl = jobServiceImpl;
+    }
 
-  @Override
+    @Override
   public Article getArticleById(String id) {
 
     try {
@@ -98,9 +98,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
           formatDateTime(startDate), formatDateTime(endDate));
 
       // Add related tags to articles
-      articles.forEach(article -> {
-        article.setTags(getArticleTags(article.getId()));
-      });
+      articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
 
       // Encapsulate the total count and the list of articles
       return new CustomDto(total, articles);
@@ -112,7 +110,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     }
   }
 
-  @Override
   public Article addArticle(Article article, MultipartFile image) {
 
     try {
@@ -143,6 +140,10 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       // Create new article
       Article createdArticle = articleMapper.addArticle(article);
       createdArticle.setTags(tagNames);
+
+//      if (article.getPublishedAt() != null) {
+//          jobServiceImpl.scheduleArticlePublish(article.getId(), article.getPublishedAt());
+//      }
 
       // Add article's image
       addImage(image, createdArticle.getId(), "article");
@@ -177,8 +178,8 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       validateAuthor(authorID);
 
       // Get total articles for a particular author by the ID
-      Long total = articleMapper.totalArticles(
-          null, authorID, sort, status,
+      Long total = articleMapper.totalAuthorArticles(
+          authorID, sort, status,
           formatDateTime(startDate), formatDateTime(endDate));
 
       // Get all articles associated with an author by ID
@@ -187,9 +188,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
           formatDateTime(startDate), formatDateTime(endDate));
 
       // Add related tags to articles
-      articles.forEach(article -> {
-        article.setTags(getArticleTags(article.getId()));
-      });
+      articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
 
       // Encapsulate the total count and the list of an Author's article
       return new CustomDto(total, articles);
@@ -222,9 +221,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       List<Article> articles = articleMapper.findAuthorInterestedArticles(authorID, limit, start);
 
       // Add related tags to articles
-      articles.forEach(article -> {
-        article.setTags(getArticleTags(article.getId()));
-      });
+      articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
 
       // Encapsulate the total count and the list of an Author's article
       return new CustomDto(total, articles);
@@ -261,6 +258,9 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
       // Update articles
       articleMapper.editArticle(existingArticle);
+
+      // Add article's image
+      addImage(image, existingArticle.getId(), "article");
 
       // Update the article's tags with the new list and return the updated tag names
       List<String> tagNames = tagServiceImpl.editArticleTags(id, article.getTags());
@@ -316,7 +316,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       if (authorID != null && !UUIDValidator.isValidUUID(authorID))
         throw new BadRequest("Invalid Author ID");
 
-      Long total = articleMapper.totalArticles(
+      Long total = articleMapper.totalSearchArticles(
           term, authorID, sort, status,
           formatDateTime(startDate), formatDateTime(endDate));
 
@@ -325,9 +325,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
           formatDateTime(startDate), formatDateTime(endDate));
 
       // Add related tags to articles
-      articles.forEach(article -> {
-        article.setTags(getArticleTags(article.getId()));
-      });
+      articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
 
       return new CustomDto(total, articles);
 
@@ -350,9 +348,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       List<Article> articles = articleMapper.findArticlesByAuthorInterest(authorID, limit, start);
 
       // Add related tags to articles
-      articles.forEach(article -> {
-        article.setTags(getArticleTags(article.getId()));
-      });
+      articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
 
       return articles;
     } catch (BadRequest e) {
@@ -392,6 +388,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     validateUUID(articleID, "Invalid Article ID");
 
     Optional<Article> article = articleMapper.findById(articleID);
+
     if (article.isEmpty()) {
       throw new NotFound("Article does not exist!");
     }
@@ -420,9 +417,8 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       Long total = articleMapper.totalTagArticles(tag);
 
       List<Article> articles = articleMapper.findByTag(tag, limit, start);
-      articles.forEach(article -> {
-        article.setTags(getArticleTags(article.getId()));
-      });
+      articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
+
       return new CustomDto(total, articles);
 
     } catch (BadRequest | NotFound e) {
@@ -435,8 +431,8 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     }
   }
 
-  @Override
-  public Map<String, Object> getArticleAnalytics(String id) {
+   @Override
+   public Map<String, Object> getArticleAnalytics(String id) {
     try {
       Map<String, Object> analyticsDto = articleMapper.getTotalArticleAnalytics(id);
       System.out.println(analyticsDto);
@@ -449,7 +445,103 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     }
   }
 
-  public Map<String, Object> shareArticle(String articleId, String sharedBy) {
+    @Override
+    public ReadingList getReadingListEntry(String authorId, String articleId) {
+        try {
+            validateArticle(articleId);
+            validateAuthor(authorId);
+            return articleMapper.getList(authorId, articleId);
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while fetching Article Analytics.");
+        }
+    }
+
+    @Override
+    public ReadingList addToReadingList(String authorId, String articleId) {
+        try {
+
+            Optional<ReadingList> existingList = Optional.ofNullable(getReadingListEntry(authorId, articleId));
+            if (existingList.isPresent()){
+                throw new BadRequest("This article has already been added to User reading list");
+            }
+
+            return articleMapper.addToReadingList(articleId, authorId);
+        } catch (BadRequest | NotFound e) {
+            log.error("Error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while adding Article to reading list.");
+        }
+    }
+
+    @Override
+    public CustomDto getUserReadingList(String authorId) {
+        try {
+            validateAuthor(authorId);
+            Long total = articleMapper.totalUserReadingList(authorId);
+            List<ReadingList> readingList = articleMapper.findUserReadingList(authorId);
+
+            return new CustomDto(total, readingList);
+
+        } catch (BadRequest | NotFound e) {
+            log.error("Bad Request: {}", e.getMessage(), e);
+            throw e;
+        }  catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while fetching Saved Articles.");
+        }
+    }
+
+    @Override
+    public ReadingList removeFromReadingList(String authorId, String articleId) {
+        try {
+            Optional<ReadingList> existingList = Optional.ofNullable(getReadingListEntry(authorId, articleId));
+            if (existingList.isEmpty()){
+                throw new NotFound("This article has not been added to User reading list");
+            }
+
+            return articleMapper.removeFromReadingList(articleId, authorId);
+        } catch (BadRequest e) {
+            log.error("Error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while Removing Article from saved list.");
+        }
+    }
+
+    public void publishArticle(String articleId) {
+        articleMapper.publishArticle(articleId);
+    }
+
+    public Date publishArticleLater(String articleId, String scheduledTime) {
+        try {
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime dateTime = LocalDateTime.parse(scheduledTime, formatter);
+            articleMapper.pendingArticle(articleId, dateTime);
+            log.info("\n\n\n Successfully created a schedule to publish an article later \n\n\n");
+            return jobServiceImpl.scheduleArticlePublish(articleId, dateTime);
+
+        } catch (NotFound e) {
+            log.error("Not Found Request: {}", e.getMessage(), e);
+            throw e;
+        }
+        catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while scheduling date-time to publish article.");
+        }
+
+    }
+
+    public Map<String, Object> shareArticle(String articleId, String sharedBy) {
     try {
 
       validateArticle(articleId);
@@ -481,4 +573,5 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
           "An unexpected error occurred while fetching shared Articles.");
     }
   }
+
 }

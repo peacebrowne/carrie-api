@@ -1,4 +1,4 @@
-package com.example.carrie.errors;
+package com.example.carrie.exceptions;
 
 import java.util.Date;
 

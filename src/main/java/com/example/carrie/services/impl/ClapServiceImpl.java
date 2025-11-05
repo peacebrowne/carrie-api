@@ -17,9 +17,9 @@ import com.example.carrie.models.Article;
 import com.example.carrie.models.Author;
 import com.example.carrie.models.Clap;
 import com.example.carrie.models.Comment;
-import com.example.carrie.errors.custom.BadRequest;
-import com.example.carrie.errors.custom.InternalServerError;
-import com.example.carrie.errors.custom.NotFound;
+import com.example.carrie.exceptions.custom.BadRequest;
+import com.example.carrie.exceptions.custom.InternalServerError;
+import com.example.carrie.exceptions.custom.NotFound;
 import com.example.carrie.mappers.ArticleMapper;
 import com.example.carrie.mappers.AuthorMapper;
 import com.example.carrie.mappers.ClapMapper;
@@ -129,9 +129,7 @@ public class ClapServiceImpl implements ClapService {
 
       Long total = calculateTotalClaps(claps);
 
-      List<ClapValueDto> clapsByAuthors = claps.stream().map(clap -> {
-        return new ClapValueDto(clap.getAuthorID(), clap.getLikes());
-      }).collect(Collectors.toList());
+      List<ClapValueDto> clapsByAuthors = claps.stream().map(clap -> new ClapValueDto(clap.getAuthorID(), clap.getLikes())).collect(Collectors.toList());
 
       return new ClapDto(targetType, targetID, total, clapsByAuthors);
 
@@ -261,7 +259,7 @@ public class ClapServiceImpl implements ClapService {
   protected void validateClapAction(String action){
     if (!Arrays.asList("like", "dislike").contains(action.toLowerCase())){
       throw new BadRequest("Action should either be 'like' or 'dislike'");
-    };
+    }
   }
 
 

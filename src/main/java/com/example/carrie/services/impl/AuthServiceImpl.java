@@ -1,8 +1,8 @@
 package com.example.carrie.services.impl;
 
 import com.example.carrie.dto.UserPrincipal;
-import com.example.carrie.errors.custom.InternalServerError;
-import com.example.carrie.errors.custom.NotFound;
+import com.example.carrie.exceptions.custom.InternalServerError;
+import com.example.carrie.exceptions.custom.NotFound;
 import com.example.carrie.mappers.AuthorMapper;
 import com.example.carrie.models.Author;
 import com.example.carrie.models.Login;
@@ -31,9 +31,13 @@ public class AuthServiceImpl implements UserDetailsService {
     AuthorMapper authorMapper;
 
     @Autowired
-    private JWTService jwtService;
+    private final JWTService jwtService;
 
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
+
+    public AuthServiceImpl(JWTService jwtService) {
+        this.jwtService = jwtService;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) {
