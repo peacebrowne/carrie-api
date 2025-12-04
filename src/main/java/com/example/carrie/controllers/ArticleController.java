@@ -50,11 +50,13 @@ public class ArticleController {
     return Success.OK("Successfully Retrieved Article Analytics", data);
   }
 
-  @GetMapping("/tag/{tag}")
-  public ResponseEntity<?> getArticleByTags(@PathVariable String tag,
+  @GetMapping("/tag/{tagId}/author/{authorId}")
+  public ResponseEntity<?> getArticleByTags(
+          @PathVariable String tagId,
+          @PathVariable String authorId,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
-    CustomDto data = articleServiceImpl.getArticleByTag(tag, limit, start);
+    CustomDto data = articleServiceImpl.getArticleByTag(tagId, authorId, limit, start);
     return Success.OK("Successfully Retrieved Article with tags", data);
   }
 
@@ -177,9 +179,9 @@ public class ArticleController {
   }
 
     // CREATE - Add to reading list
-    @PostMapping("/saved/{authorId}/{articleId}")
+    @PostMapping("/save")
     public ResponseEntity<?> addToReadingList(
-            @PathVariable String authorId, @PathVariable String articleId) {
+            @RequestParam String authorId, @RequestParam String articleId) {
       return Success.OK("Successfully Added To Reading List",
          articleServiceImpl.addToReadingList(authorId, articleId));
     }
@@ -192,9 +194,10 @@ public class ArticleController {
     }
 
     // DELETE - Remove by readingListId
-    @DeleteMapping("/unsave/{authorId}/{articleId}")
+    @DeleteMapping("/unsave")
     public ResponseEntity<?>  removeFromReadingList(
-            @PathVariable String authorId, @PathVariable String articleId) {
+            @RequestParam String authorId, @RequestParam String articleId) {
+
         return Success.OK("Successfully removed from reading list",
                 articleServiceImpl.removeFromReadingList(authorId, articleId));
     }

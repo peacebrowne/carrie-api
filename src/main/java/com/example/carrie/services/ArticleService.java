@@ -33,7 +33,7 @@ public interface ArticleService {
 
     ReadingList getReadingListEntry(String authorId, String articleId);
 
-    CustomDto getArticleByTag(String tag, Long limit, Long start);
+    CustomDto getArticleByTag(String tagId, String authorId, Long limit, Long start);
 
     Map<String, Object> getArticleAnalytics(String id);
 

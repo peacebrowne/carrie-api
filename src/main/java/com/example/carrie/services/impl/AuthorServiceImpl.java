@@ -1,5 +1,6 @@
 package com.example.carrie.services.impl;
 
+import com.example.carrie.dto.AuthorDto;
 import com.example.carrie.dto.CustomDto;
 import com.example.carrie.mappers.ImageMapper;
 import com.example.carrie.mappers.TagMapper;
@@ -44,23 +45,24 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     }
 
     @Override
-    public Author getAuthorById(String id) {
+    public AuthorDto getAuthorById(String id) {
         try {
 
-            // Validate the existence of the author using its ID and return the article if
-            // it exists.
+            // Validate the existence of the author using its ID and return the article if it exists.
             validateAuthor(id);
 
-            // Retrieve the list of tags associated with the article
+            // Retrieve the list of interests associated with the author
             List<String> authorInterest = tagServiceImpl.getAuthorInterest(id);
 
             Author author = authorMapper.findById(id);
 
-            // Set the retrieved tags to the article
+            // Set the retrieved interests to the author
             author.setInterests(authorInterest);
 
-            // Return the article with its associated tags
-            return author;
+            AuthorDto authorDto = new AuthorDto();
+
+            // Return the author with his/her associated interests
+            return authorDto.AuthorDtoMapper(author);
 
         } catch (BadRequest | NotFound e) {
             log.error("ERROR: {}", e.getMessage(), e);
@@ -86,7 +88,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     }
 
     @Override
-    public Author addAuthor(Author author, MultipartFile image) {
+    public AuthorDto addAuthor(Author author, MultipartFile image) {
 
         try {
             validateEmail(author.getEmail());
@@ -108,13 +110,15 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
             Author createdAuthor = authorMapper.addAuthor(author);
             createdAuthor.setInterests(interestNames);
 
+            AuthorDto authorDto = new AuthorDto();
+
             // Add author's image
             addImage(image, createdAuthor.getId(), "author");
 
             // Add author interest
             tagServiceImpl.addAuthorInterest(createdAuthor.getId(), interests);
 
-            return createdAuthor;
+            return authorDto.AuthorDtoMapper(author);
         } catch (BadRequest | Conflict e) {
             log.error("Bad Request: {}", e.getMessage(), e);
             throw e;
@@ -127,10 +131,10 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     }
 
     @Override
-    public Author editAuthor(Author author, String id) {
+    public AuthorDto editAuthor(Author author, String id) {
         try {
 
-            Author existingAuthor = getAuthorById(id);
+            AuthorDto existingAuthor = getAuthorById(id);
 
             if (author.getEmail() != null) {
 
@@ -150,9 +154,9 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
 
             Optional.ofNullable(author.getDob()).ifPresent(existingAuthor::setDob);
             Optional.ofNullable(author.getGender()).ifPresent(existingAuthor::setGender);
-            Optional.ofNullable(author.getUsername()).ifPresent(existingAuthor::setUsername);
             Optional.ofNullable(author.getFirstName()).ifPresent(existingAuthor::setFirstName);
             Optional.ofNullable(author.getLastName()).ifPresent(existingAuthor::setLastName);
+            Optional.ofNullable(author.getUsername()).ifPresent(existingAuthor::setUsername);
             Optional.ofNullable(author.getAddress()).ifPresent(existingAuthor::setAddress);
             Optional.ofNullable(author.getMsisdn()).ifPresent(existingAuthor::setMsisdn);
             Optional.ofNullable(author.getBiography()).ifPresent(existingAuthor::setBiography);
@@ -164,8 +168,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
             // Update Author
             authorMapper.editAuthor(existingAuthor);
 
-            // Update the author's interests with the new list and return the updated
-            // interest names
+            // Update the author's interests with the new list and return the updated interest names
             List<String> interestNames = tagServiceImpl.editAuthorInterest(id, author.getInterests());
 
             // Set the updated tags to the existing author
@@ -183,12 +186,12 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     }
 
     @Override
-    public Author deleteAuthor(String id) {
+    public AuthorDto deleteAuthor(String id) {
         try {
 
-            getAuthorById(id);
-
-            return authorMapper.deleteAuthor(id);
+            AuthorDto deletedAuthor = getAuthorById(id);
+            authorMapper.deleteAuthor(id);
+            return deletedAuthor;
 
         } catch (BadRequest | NotFound e) {
             log.error("Validation Error: {}", e.getMessage(), e);
@@ -206,11 +209,11 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     }
 
     @Override
-    public Map<String, Object> followAuthor(String follower, String author) {
+    public AuthorDto followAuthor(String follower, String author) {
         try {
 
             validateAuthorFollower(follower, author);
-            Map<String, Object> data = authorMapper.getSingleAuthorFollower(
+            AuthorDto data = authorMapper.getSingleAuthorFollower(
                     follower, author);
 
             if (data != null)
@@ -230,7 +233,7 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     }
 
     @Override
-    public Map<String, Object> unfollowAuthor(String follower, String author) {
+    public AuthorDto unfollowAuthor(String follower, String author) {
         try {
             validateAuthorFollower(follower, author);
             return authorMapper.unfollowAuthor(follower, author);
@@ -244,12 +247,13 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     }
 
     @Override
-    public CustomDto getAuthorFollowers(String id) {
+    public CustomDto getAuthorFollowers(String id, Long limit, Long start) {
         try {
             validateAuthor(id);
 
-            List<Map<String, Object>> authorFollowers = authorMapper.getAuthorFollowers(id);
-            return new CustomDto((long) authorFollowers.size(), authorFollowers);
+            Long total = authorMapper.totalAuthorFollower(id);
+            List<AuthorDto> authorFollowers = authorMapper.getAuthorFollowers(id, limit, start);
+            return new CustomDto(total, authorFollowers);
 
         } catch (BadRequest | NotFound e) {
             log.error("Validation Error: {}", e.getMessage(), e);
@@ -262,11 +266,14 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     }
 
     @Override
-    public List<Author> getFollowedAuthors(String id) {
+    public CustomDto getFollowedAuthors(String id, Long limit, Long start) {
 
         try {
             validateAuthor(id);
-            return authorMapper.getFollowedAuthors(id);
+
+            Long total = authorMapper.totalFollowedAuthors(id);
+            List<AuthorDto> followedAuthors = authorMapper.getFollowedAuthors(id, limit, start);
+            return new CustomDto(total, followedAuthors);
         } catch (BadRequest | NotFound e) {
             log.error("Validation Error: {}", e.getMessage(), e);
             throw e;
@@ -274,6 +281,38 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
                     "An unexpected error occurred while fetching the followed authors.");
+        }
+    }
+
+    @Override
+    public List<AuthorDto> recommendedAuthors(String authorID, Long limit) {
+        try {
+
+            validateAuthor(authorID);
+
+            List<AuthorDto> authors = authorMapper.getRecommendedAuthors(authorID, limit);
+
+            authors.forEach( author -> {
+                // Retrieve the list of interests associated with the author
+                List<String> authorInterest = tagServiceImpl.getAuthorInterest(author.getId());
+
+                // Set the retrieved interest to the author
+                author.setInterests(authorInterest);
+            });
+
+            // Return the list of authors with his/her associated interests
+            return authors;
+
+        }
+        catch (BadRequest | NotFound e) {
+            log.error("Validation Error: {}", e.getMessage(), e);
+            throw e;
+        }
+        catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while fetching the Recommended Authors.");
+
         }
     }
 

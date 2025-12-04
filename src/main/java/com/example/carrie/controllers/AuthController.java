@@ -1,5 +1,6 @@
 package com.example.carrie.controllers;
 
+import com.example.carrie.dto.AuthorDto;
 import com.example.carrie.exceptions.custom.BadRequest;
 import com.example.carrie.models.Author;
 import com.example.carrie.models.Login;
@@ -38,7 +39,7 @@ public class AuthController {
             throw new BadRequest(result.getAllErrors().get(0).getDefaultMessage());
         }
 
-        List<Author> data = Collections.singletonList(
+        List<AuthorDto> data = Collections.singletonList(
                 authorServiceImpl.addAuthor(author, image)
         );
         return Success.CREATED("Successfully created Author.", data);

@@ -20,7 +20,7 @@ public class SingleArticlePublishJob implements Job {
         JobDataMap dataMap = context.getMergedJobDataMap();
         String articleId = dataMap.getString("articleId");
 
-        System.out.println("🕒 Publishing scheduled article ID: " + articleId);
+        System.out.println("Publishing scheduled article ID: " + articleId);
         articleServiceImpl.publishArticle(articleId);
     }
 }

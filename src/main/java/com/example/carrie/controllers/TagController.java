@@ -22,9 +22,12 @@ public class TagController {
     }
 
     @GetMapping("/recommended/{authorID}")
-    public ResponseEntity<?> getRecommendedTags(@PathVariable String authorID){
+    public ResponseEntity<?> getRecommendedTags(
+            @PathVariable String authorID,
+            @RequestParam(required = false, defaultValue = "10") Long limit
+    ){
         return Success.OK("Successfully Retrieved Recommended Topics",
-                tagServiceImpl.recommendedInterests(authorID));
+                tagServiceImpl.recommendedInterests(authorID, limit));
     }
 
     @GetMapping("/{id}")
@@ -36,6 +39,23 @@ public class TagController {
     @GetMapping("/search")
     public ResponseEntity<?> searchTags(@RequestParam String term){
         return Success.OK("Successfully Retrieved searched tags", tagServiceImpl.searchTags(term));
+    }
+
+    @PutMapping("/follow")
+    public  ResponseEntity<?> addTagFollower(
+            @RequestParam String tagId,
+            @RequestParam String authorId
+    ){
+        return Success.OK("Successfully updated tag follower", tagServiceImpl.followTag(tagId, authorId));
+    }
+
+
+    @PutMapping("/unfollow")
+    public  ResponseEntity<?> removeTagFollower(
+            @RequestParam String tagId,
+            @RequestParam String authorId
+    ){
+        return Success.OK("Successfully updated tag follower", tagServiceImpl.unfollowTag(tagId, authorId));
     }
 
 }

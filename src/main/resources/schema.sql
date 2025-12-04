@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS articles (
     authorID UUID NOT NULL,
     description TEXT,
     content TEXT,
-         TIMESTAMP,
+    publish_date TIMESTAMP,
+    is_trash BOOLEAN NOT NULL DEFAULT false,
     status TEXT NOT NULL DEFAULT 'draft',
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -128,6 +129,13 @@ CREATE TABLE IF NOT EXISTS reading_list (
     FOREIGN KEY (authorID) REFERENCES authors(id) ON DELETE CASCADE,
     FOREIGN KEY (articleID) REFERENCES articles(id) ON DELETE CASCADE,
     UNIQUE(authorID, articleID)
+)
+
+CREATE TABLE IF NOT EXISTS trash (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    articleID UUID UNIQUE NOT NULL,
+    deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (articleID) REFERENCES articles(id) ON DELETE CASCADE
 )
 
 -- QUARTZ

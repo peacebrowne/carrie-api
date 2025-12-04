@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.example.carrie.exceptions.custom.BadRequest;
+import com.example.carrie.exceptions.custom.Conflict;
+import com.example.carrie.exceptions.custom.NotFound;
 import com.example.carrie.services.TagService;
 import com.example.carrie.utils.validations.UUIDValidator;
 import org.slf4j.Logger;
@@ -68,7 +70,8 @@ public class TagServiceImpl implements TagService {
          * Insert the ArticleTag mapping into the database to associate the tag with the article
          */
         tagMapper.addArticleTag(articleID, tag.getId());
-        tagMapper.updateTagStories(tag.getId());
+        tag.setStories(tag.getStories() + 1);
+        tagMapper.updateTag(tag);
 
       });
     } catch (Exception e) {
@@ -148,7 +151,7 @@ public class TagServiceImpl implements TagService {
        * Delete the ArticleTag mapping into the database to disassociate the tag with
        * the article
        */
-      tagMapper.deleteAuthorInterest(authorID);
+      tagMapper.deleteAuthorInterests(authorID);
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
@@ -157,22 +160,36 @@ public class TagServiceImpl implements TagService {
     }
   }
 
-  protected void addAuthorInterest(String authorID, List<Tag> interests) {
-    try {
-      interests.forEach(interest -> {
+  protected Tag addAuthorInterest(String authorID, List<Tag> interests) {
+      Tag updatedTag = null;
+      try {
+          for (Tag interest : interests) {
 
-        /*
-         * Insert the ArticleTag mapping into the
-         * database to associate the tag with the article
-         */
-        tagMapper.addAuthorInterest(authorID, interest.getId());
+              Optional<Tag> existingTag = tagMapper.getSingleAuthorInterest(authorID, interest.getId());
+              if (existingTag.isPresent()) {
 
-      });
-    } catch (Exception e) {
-      log.error("Internal Server Error: {}", e.getMessage(), e);
-      throw new InternalServerError(
-          "An unexpected error occurred while creating an account.");
-    }
+                  // Return the Conflict with the specific, helpful message
+                  throw new Conflict(String.format(
+                          "You are already following the tag '%s'. Please choose a different interest to follow.",
+                          interest.getName()
+                  ));
+              }
+
+              // Insert the author-tag relationship
+              tagMapper.addAuthorInterest(authorID, interest.getId());
+              updatedTag = tagMapper.updateTag(interest);
+          }
+
+          // Return the last updated tag (assuming one tag in the list)
+          return updatedTag;
+     } catch ( Conflict e) {
+          log.error("Conflict: {}", e.getMessage(), e);
+          throw e;
+      } catch (Exception e) {
+          log.error("Internal Server Error: {}", e.getMessage(), e);
+          throw new InternalServerError(
+             "An unexpected error occurred while creating an account.");
+     }
   }
 
   protected List<String> editAuthorInterest(String authorID, List<String> interests) {
@@ -223,12 +240,13 @@ public class TagServiceImpl implements TagService {
     }
   }
 
-  public List<Tag> recommendedInterests(String authorID) {
+  @Override
+  public List<Tag> recommendedInterests(String authorID, Long limit) {
       try {
 
           validateUUID(authorID);
 
-          return tagMapper.getRecommendedTags(authorID);
+          return tagMapper.getRecommendedTags(authorID, limit);
 
       } catch (Exception e) {
           log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -249,21 +267,19 @@ public class TagServiceImpl implements TagService {
     }
   }
 
-    @Override
-    public Tag getTagById(String id) {
-        try {
-//  TODO - get tag with total popularity and stories
+  @Override
+  public Tag getTagById(String id) {
+      try {
+          return tagMapper.getById(id);
+      } catch (Exception e) {
+          log.error("Internal Server Error: {}", e.getMessage(), e);
+          throw new InternalServerError(
+                  "An unexpected error occurred while getting all tags");
+      }
+  }
 
-            return tagMapper.getById(id);
-        } catch (Exception e) {
-            log.error("Internal Server Error: {}", e.getMessage(), e);
-            throw new InternalServerError(
-                    "An unexpected error occurred while getting all tags");
-        }
-    }
-
-    @Override
-    public List<Tag> searchTags(String term) {
+  @Override
+  public List<Tag> searchTags(String term) {
         try {
             return tagMapper.searchTags(term);
         } catch (Exception e) {
@@ -273,13 +289,61 @@ public class TagServiceImpl implements TagService {
         }
     }
 
+  @Override
+  public Tag followTag(String tagId, String authorId) {
+        try {
+            List.of(tagId, authorId).forEach(this::validateUUID);
+            Tag tag = getTagById(tagId);
+            tag.setPopularity(tag.getPopularity() + 1);
+            return addAuthorInterest(authorId, List.of(tag));
+        }
+        catch ( Conflict e) {
+            log.error("Conflict: {}", e.getMessage(), e);
+            throw e;
+        }
+        catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while updating tag followers");
+        }
+  }
+
+  @Override
+  public Tag unfollowTag(String tagId, String authorId) {
+        try {
+            List.of(tagId, authorId).forEach(this::validateUUID);
+            Tag tag = getTagById(tagId);
+
+            if (tag == null) throw new NotFound("The Tag you're trying to unfollow does not exits");
+
+            Optional<Tag> existingTag = tagMapper.getSingleAuthorInterest(authorId, tagId);
+            if (existingTag.isEmpty()) {
+
+                // Return the Conflict with the specific, helpful message
+                throw new NotFound("You are currently not following this tag");
+            }
+            tagMapper.deleteAuthorInterest(authorId, tagId);
+
+            tag.setPopularity(tag.getPopularity() - 1);
+            return tagMapper.updateTag(tag);
+        }
+        catch ( NotFound e) {
+            log.error("Not found: {}", e.getMessage(), e);
+            throw e;
+        }
+        catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while updating tag followers");
+        }
+  }
+
     private void validateUUID(String id) {
         if (!UUIDValidator.isValidUUID(id)) {
             throw new BadRequest("Invalid Author ID");
         }
     }
 
-//  TODO - update tag with total popularity and stories for
 
 
 }

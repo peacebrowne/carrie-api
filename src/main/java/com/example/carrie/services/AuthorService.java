@@ -1,30 +1,31 @@
 package com.example.carrie.services;
 
 import java.util.List;
-import java.util.Map;
 
+import com.example.carrie.dto.AuthorDto;
 import com.example.carrie.dto.CustomDto;
 import com.example.carrie.models.Author;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface AuthorService {
 
-  public Author getAuthorById(String id);
+  public AuthorDto getAuthorById(String id);
 
-  public Author addAuthor(Author author, MultipartFile image);
+  public AuthorDto addAuthor(Author author, MultipartFile image);
 
   public List<?> getAllAuthors(String sort, Long limit, Long start);
 
-  public Author editAuthor(Author author, String id);
+  public AuthorDto editAuthor(Author author, String id);
 
-  public Author deleteAuthor(String id);
+  public AuthorDto deleteAuthor(String id);
 
-  public Map<String, Object> followAuthor(String followerAuthor, String followedAuthor) ;
+  public AuthorDto followAuthor(String followerAuthor, String followedAuthor) ;
 
-  public Map<String, Object> unfollowAuthor(String follower, String author);
+  public AuthorDto unfollowAuthor(String follower, String author);
 
-  public CustomDto getAuthorFollowers(String id);
+  public CustomDto getAuthorFollowers(String id, Long limit, Long start);
 
-  public List<Author> getFollowedAuthors(String id);
+  public CustomDto getFollowedAuthors(String id, Long limit, Long start);
 
+  List<AuthorDto> recommendedAuthors(String authorID, Long limit);
 }

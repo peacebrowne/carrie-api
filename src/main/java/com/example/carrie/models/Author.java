@@ -15,7 +15,6 @@ import lombok.Data;
 @Data
 public class Author {
 
-    // @Getter(AccessLevel.NONE)
     private String password;
 
     /*

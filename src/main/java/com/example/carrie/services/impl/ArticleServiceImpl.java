@@ -134,16 +134,11 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
             Objects.equals(a.getTitle(), article.getTitle()))
           throw new Conflict(
               "An article with the same title already exists for the specified author. Please use a unique title or update the existing article.");
-
       }));
 
       // Create new article
       Article createdArticle = articleMapper.addArticle(article);
       createdArticle.setTags(tagNames);
-
-//      if (article.getPublishedAt() != null) {
-//          jobServiceImpl.scheduleArticlePublish(article.getId(), article.getPublishedAt());
-//      }
 
       // Add article's image
       addImage(image, createdArticle.getId(), "article");
@@ -412,11 +407,11 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   }
 
   @Override
-  public CustomDto getArticleByTag(String tag, Long limit, Long start) {
+  public CustomDto getArticleByTag(String tagId, String authorId , Long limit, Long start) {
     try {
-      Long total = articleMapper.totalTagArticles(tag);
+      Long total = articleMapper.totalTagArticles(tagId, authorId);
 
-      List<Article> articles = articleMapper.findByTag(tag, limit, start);
+      List<Article> articles = articleMapper.findByTag(tagId, authorId, limit, start);
       articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
 
       return new CustomDto(total, articles);
@@ -500,13 +495,14 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     @Override
     public ReadingList removeFromReadingList(String authorId, String articleId) {
         try {
+
             Optional<ReadingList> existingList = Optional.ofNullable(getReadingListEntry(authorId, articleId));
             if (existingList.isEmpty()){
                 throw new NotFound("This article has not been added to User reading list");
             }
 
-            return articleMapper.removeFromReadingList(articleId, authorId);
-        } catch (BadRequest e) {
+            return articleMapper.removeFromReadingList(authorId, articleId);
+        } catch (NotFound | BadRequest e) {
             log.error("Error: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
@@ -526,7 +522,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime dateTime = LocalDateTime.parse(scheduledTime, formatter);
             articleMapper.pendingArticle(articleId, dateTime);
-            log.info("\n\n\n Successfully created a schedule to publish an article later \n\n\n");
             return jobServiceImpl.scheduleArticlePublish(articleId, dateTime);
 
         } catch (NotFound e) {

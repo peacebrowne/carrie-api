@@ -13,30 +13,77 @@ import com.example.carrie.models.Article;
 @Mapper
 public interface ArticleMapper {
 
-        @Select("SELECT * FROM articles WHERE title =#{title}")
+        @Select("SELECT * FROM articles WHERE title =#{title} AND is_trash = false")
         List<Article> findByTitle(@Param("title") String title);
 
-        @Select("SELECT a.* FROM articles a LEFT JOIN article_tags at ON a.id = at.articleID LEFT JOIN tags t ON t.id = at.tagID WHERE t.name ILIKE #{tag} ORDER BY a.updatedAt DESC LIMIT #{limit} OFFSET #{start}")
-        List<Article> findByTag(@Param("tag") String tag, @Param("limit") Long limit,
-                        @Param("start") Long start);
+//        @Select("SELECT a.* FROM articles a LEFT JOIN article_tags at ON a.id = at.articleID LEFT JOIN tags t ON t.id = at.tagID WHERE t.id = #{tagId}::uuid AND a.is_trash = false ORDER BY a.updatedAt DESC LIMIT #{limit} OFFSET #{start}")
+        @Select("WITH tag_articles AS (\n" +
+                "  SELECT articleId\n" +
+                "  FROM article_tags\n" +
+                "  WHERE tagId = #{tagId}::uuid\n" +
+                ")\n" +
+                "\n" +
+                "SELECT a.*, COALESCE(cl.likes, 0) AS likes, COALESCE(cm.totalComments, 0) AS totalComments\n" +
+                "FROM tag_articles ta\n" +
+                "LEFT JOIN articles a ON a.id = ta.articleId\n" +
+                "LEFT JOIN (\n" +
+                "  SELECT articleId, SUM(likes) AS likes\n" +
+                "  FROM claps\n" +
+                "  GROUP BY articleId\n" +
+                ") cl ON cl.articleId = a.id\n" +
+                "LEFT JOIN (\n" +
+                "  SELECT articleId, COUNT(id) AS totalComments\n" +
+                "  FROM comments WHERE articleId IN (\n" +
+                "    SELECT * FROM tag_articles\n" +
+                "  )\n" +
+                "  GROUP BY articleId\n" +
+                ")cm ON cm.articleId = a.id\n" +
+                "WHERE a.authorId <> #{authorId}::uuid AND a.is_trash = false AND a.status = 'published'\n" +
+                "ORDER BY cl.likes\n" +
+                "LIMIT #{limit} OFFSET #{start}"
+                )
+        List<Article> findByTag(@Param("tagId") String tagId, @Param("authorId") String authorId,
+                                @Param("limit") Long limit, @Param("start") Long start);
 
-        @Select("SELECT COUNT(*) AS total FROM (SELECT DISTINCT a.* FROM articles a LEFT JOIN article_tags at ON a.id = at.articleID LEFT JOIN tags t ON t.id = at.tagID WHERE t.name ILIKE #{tag})")
-        Long totalTagArticles(@Param("tag") String tag);
+        @Select("SELECT COUNT(*) AS total FROM (\n" +
+                "  WITH tag_articles AS (\n" +
+                "    SELECT articleId FROM article_tags WHERE tagId = #{tagId}::uuid\n" +
+                "  )                               \n" +
+                "  SELECT a.*, COALESCE(cl.likes, 0) AS likes, COALESCE(cm.totalComments, 0) AS totalComments  \n" +
+                "  FROM tag_articles ta  \n" +
+                "  LEFT JOIN articles a ON a.id = ta.articleId  \n" +
+                "  LEFT JOIN (  \n" +
+                "    SELECT articleId, SUM(likes) AS likes  \n" +
+                "    FROM claps  \n" +
+                "    GROUP BY articleId  \n" +
+                "  ) cl ON cl.articleId = a.id  \n" +
+                "  LEFT JOIN (  \n" +
+                "    SELECT articleId, COUNT(id) AS totalComments  \n" +
+                "    FROM comments WHERE articleId IN (  \n" +
+                "      SELECT * FROM tag_articles  \n" +
+                "    )  \n" +
+                "    GROUP BY articleId  \n" +
+                "  )cm ON cm.articleId = a.id  \n" +
+                "  WHERE a.authorId <> #{authorId}::uuid AND a.is_trash = false AND a.status = 'published'  \n" +
+                "  ORDER BY cl.likes \n" +
+                ")")
+        Long totalTagArticles(@Param("tagId") String tagId, @Param("authorId") String authorId);
 
-        @Select("SELECT a.*, (SELECT COUNT(*) FROM comments cm WHERE cm.articleID = a.id) AS totalComments, COALESCE(SUM(cl.likes),0) AS likes, COALESCE(SUM(cl.dislikes),0) AS dislikes FROM articles a LEFT JOIN claps cl ON cl.articleID = a.id WHERE a.id = #{id}::uuid GROUP BY a.id")
+        @Select("SELECT a.*, (SELECT COUNT(*) FROM comments cm WHERE cm.articleID = a.id) AS totalComments, COALESCE(SUM(cl.likes),0) AS likes, COALESCE(SUM(cl.dislikes),0) AS dislikes FROM articles a LEFT JOIN claps cl ON cl.articleID = a.id WHERE a.id = #{id}::uuid AND a.is_trash = false GROUP BY a.id")
         Optional<Article> findById(@Param("id") String id);
 
         @Select("<script> " +
                         "SELECT a.*, " +
-                        "(SELECT COUNT(DISTINCT cm.*) AS totalComments " +
+                        "COALESCE(COUNT(DISTINCT cm.id), 0) AS total_comments, " +
                         "COALESCE(SUM(cl.likes), 0) AS likes, " +
                         "COALESCE(SUM(cl.dislikes), 0) AS dislikes " +
                         "FROM articles a " +
                         "LEFT JOIN claps cl ON cl.articleID = a.id " +
                         "LEFT JOIN comments cm ON cm.articleID = a.id " +
+                        "WHERE a.is_trash = false " +
                         "<choose> " +
                         "<when test='status != null and status != \"\"'>" +
-                        "WHERE a.status = #{status} " +
+                        "AND a.status = #{status} " +
                         "<choose> " +
                         "<when test='startDate != null and endDate != null'> " +
                         "AND a.createdAt BETWEEN #{startDate} AND #{endDate} " +
@@ -198,7 +245,7 @@ public interface ArticleMapper {
 
         @Select("<script>" +
                         "SELECT a.*, " +
-                        "COUNT(DISTINCT cm.id) AS totalComments, " +
+                        "COALESCE(COUNT(DISTINCT cm.id), 0) AS totalComments, " +
                         "COALESCE(SUM(cl.likes), 0) AS likes, " +
                         "COALESCE(SUM(cl.dislikes), 0) AS dislikes " +
                         "FROM articles a " +
@@ -347,7 +394,35 @@ public interface ArticleMapper {
         List<Article> findArticlesByAuthorInterest(@Param("authorId") String authorId, @Param("limit") Long limit,
                         @Param("start") Long start);
 
-        @Select("SELECT a.*, (SELECT COUNT(cm.*) AS totalComments FROM comments cm WHERE cm.articleID = a.id), COALESCE(SUM(cl.likes), 0) AS likes, COALESCE(SUM(cl.dislikes), 0) AS dislikes FROM articles a LEFT JOIN claps cl ON cl.articleID = a.id LEFT JOIN article_tags at ON at.articleId = a.id LEFT JOIN author_interest ai ON ai.tagID = at.tagID WHERE ai.authorId = #{authorId}::uuid AND a.status = 'published' GROUP BY a.id ORDER BY a.title LIMIT #{limit} OFFSET #{start}")
+        @Select("SELECT \n" +
+                "  a.*,\n" +
+                "\n" +
+                "  (SELECT COUNT(*) FROM comments cm WHERE cm.articleID = a.id) AS totalComments,\n" +
+                "\n" +
+                "  COALESCE(cl.likes, 0) AS likes,\n" +
+                "  COALESCE(cl.dislikes, 0) AS dislikes\n" +
+                "\n" +
+                "FROM articles a\n" +
+                "\n" +
+                "LEFT JOIN (\n" +
+                "    SELECT articleID, \n" +
+                "           SUM(likes) AS likes, \n" +
+                "           SUM(dislikes) AS dislikes\n" +
+                "    FROM claps\n" +
+                "    GROUP BY articleID\n" +
+                ") cl ON cl.articleID = a.id\n" +
+                "\n" +
+                "LEFT JOIN article_tags at ON at.articleId = a.id \n" +
+                "LEFT JOIN author_interest ai ON ai.tagID = at.tagID \n" +
+                "\n" +
+                "WHERE \n" +
+                "    ai.authorId = #{authorId}::uuid\n" +
+                "    AND a.status = 'published'\n" +
+                "    AND a.is_trash = false\n" +
+                "\n" +
+                "GROUP BY a.id, cl.likes, cl.dislikes\n" +
+                "ORDER BY a.title\n" +
+                "LIMIT #{limit} OFFSET #{start};")
         List<Article> findAuthorInterestedArticles(@Param("authorId") String authorID, @Param("limit") Long limit,
                         @Param("start") Long start);
 
@@ -370,7 +445,7 @@ public interface ArticleMapper {
         @Select("SELECT COUNT(*) FROM reading_list WHERE authorId = #{authorId}::uuid")
         Long totalUserReadingList(@Param("authorId") String authorId);
 
-        @Delete("DELETE FROM reading_list WHERE authorId = #{authorId}::uuid AND articleId = #{articleId}::uuid RETURNING *")
+        @Select("DELETE FROM reading_list WHERE authorId = #{authorId}::uuid AND articleId = #{articleId}::uuid RETURNING *")
         ReadingList removeFromReadingList(@Param("authorId") String authorId, @Param("articleId") String articleId);
 
         @Update("UPDATE articles SET status = 'published' WHERE id = #{id}::uuid")

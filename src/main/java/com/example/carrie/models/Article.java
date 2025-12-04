@@ -19,8 +19,8 @@ public class Article {
    * Title of the Article, and it should be minimum 5 or maximum 150 character and
    * should not be empty.
    */
-  @NotEmpty(message = "Please provide a title for the Article!")
-  @Size(min = 5, max = 150, message = "Article title must be at least 5 characters and no more than 100 characters.")
+//  @NotEmpty(message = "Please provide a title for the Article!")
+  @Size(max = 150, message = "Article title must be at least 5 characters and no more than 100 characters.")
   private String title;
 
   /*
