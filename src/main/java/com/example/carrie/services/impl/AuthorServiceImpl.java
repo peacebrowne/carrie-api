@@ -285,12 +285,12 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
     }
 
     @Override
-    public List<AuthorDto> recommendedAuthors(String authorID, Long limit) {
+    public List<AuthorDto> recommendedAuthors(String authorID, String tagId, Long limit) {
         try {
 
             validateAuthor(authorID);
 
-            List<AuthorDto> authors = authorMapper.getRecommendedAuthors(authorID, limit);
+            List<AuthorDto> authors = authorMapper.getRecommendedAuthors(authorID, tagId, limit);
 
             authors.forEach( author -> {
                 // Retrieve the list of interests associated with the author

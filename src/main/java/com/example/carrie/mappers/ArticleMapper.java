@@ -435,7 +435,7 @@ public interface ArticleMapper {
         @Select("SELECT * FROM reading_list WHERE id = #{id}::uuid")
         ReadingList findReadingListById(String id);
 
-        @Select("SELECT * FROM reading_list WHERE authorId = #{authorId}::uuid LIMIT 5 OFFSET 0")
+        @Select("SELECT * FROM reading_list WHERE authorId = #{authorId}::uuid ORDER BY savedAt DESC LIMIT 5 OFFSET 0")
         List<ReadingList> findUserReadingList(@Param("authorId") String authorId);
 
         @Select("SELECT * FROM reading_list WHERE authorId = #{authorId}::uuid AND articleId = #{articleId}::uuid")

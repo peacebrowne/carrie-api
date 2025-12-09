@@ -27,5 +27,5 @@ public interface AuthorService {
 
   public CustomDto getFollowedAuthors(String id, Long limit, Long start);
 
-  List<AuthorDto> recommendedAuthors(String authorID, Long limit);
+  List<AuthorDto> recommendedAuthors(String authorID, String tagId, Long limit);
 }

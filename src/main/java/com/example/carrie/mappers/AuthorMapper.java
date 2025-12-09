@@ -55,33 +55,39 @@ public interface AuthorMapper {
     @Select("SELECT COUNT(*) AS total FROM (SELECT a.id FROM authors a LEFT JOIN author_followers af ON a.id = af.follower WHERE af.author = #{id}::uuid)")
     Long totalFollowedAuthors(@Param("id") String id);
 
-    @Select("WITH author_following_friends AS (\n" +
-            "    SELECT follower AS friend\n" +
-            "    FROM author_followers\n" +
-            "    WHERE author = #{authorID}::uuid\n" +
-            "),\n" +
-            "\n" +
-            "friends_followed_authors AS (\n" +
-            "    SELECT DISTINCT af.author AS suggested_author\n" +
-            "    FROM author_followers af\n" +
-            "    WHERE af.follower IN (SELECT friend FROM author_following_friends)\n" +
-            "      AND af.author <> #{authorID}::uuid\n" +
-            "),\n" +
-            "\n" +
-            "recommended_authors AS (\n" +
-            "    SELECT suggested_author\n" +
-            "    FROM friends_followed_authors\n" +
-            "    WHERE suggested_author NOT IN (\n" +
-            "        SELECT friend FROM author_following_friends\n" +
-            "    )\n" +
-            ")\n" +
-            "\n" +
-            "SELECT a.*\n" +
-            "FROM recommended_authors ra\n" +
-            "JOIN authors a ON a.id = ra.suggested_author\n" +
-            "ORDER BY RANDOM()\n" +
-            "LIMIT #{limit};")
+    @Select("<script> " +
+            "WITH author_following_friends AS ( " +
+            "    SELECT follower AS friend " +
+            "    FROM author_followers " +
+            "    WHERE author = #{authorID}::uuid " +
+            "), " +
+            "friends_followed_authors AS ( " +
+            "    SELECT DISTINCT af.author AS suggested_author " +
+            "    FROM author_followers af " +
+            "    WHERE af.follower IN (SELECT friend FROM author_following_friends) " +
+            "      AND af.author != #{authorID}::uuid " +
+            "), " +
+            "recommended_authors AS ( " +
+            "    SELECT suggested_author " +
+            "    FROM friends_followed_authors " +
+            "    WHERE suggested_author NOT IN ( " +
+            "        SELECT friend FROM author_following_friends " +
+            "    ) " +
+            ") " +
+            "SELECT a.* " +
+            "FROM recommended_authors ra " +
+            "JOIN authors a ON a.id = ra.suggested_author " +
+            " <if test=\"tagId != null and tagId != ''\"> " +
+            "     JOIN author_interest ai ON ai.authorId = a.id " +
+            "       WHERE ai.tagId = #{tagId}::uuid " +
+            " </if> " +
+            "ORDER BY RANDOM() " +
+            "LIMIT #{limit} " +
+            "</script>")
+    List<AuthorDto> getRecommendedAuthors(
+            @Param("authorID") String authorID,
+            @Param("tagId") String tagId,
+            @Param("limit") Long limit);
 
-    List<AuthorDto> getRecommendedAuthors(@Param("authorID") String authorID, @Param("limit") Long limit);
 
 }

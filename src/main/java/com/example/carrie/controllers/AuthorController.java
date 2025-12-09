@@ -81,10 +81,11 @@ public class AuthorController {
     @GetMapping("/recommended/{authorID}")
     public ResponseEntity<?> getRecommendedTags(
             @PathVariable String authorID,
+            @RequestParam(required = false) String tagId,
             @RequestParam(required = false, defaultValue = "10") Long limit
     ){
         return Success.OK("Successfully Retrieved Recommended Topics",
-                authorServiceImpl.recommendedAuthors(authorID, limit));
+                authorServiceImpl.recommendedAuthors(authorID, tagId, limit));
     }
 
 }
