@@ -241,20 +241,36 @@ public class TagServiceImpl implements TagService {
   }
 
   @Override
-  public List<Tag> recommendedInterests(String authorID, Long limit) {
+  public List<Tag> recommendedAuthorInterests(String authorID, Long limit) {
       try {
 
           validateUUID(authorID);
 
-          return tagMapper.getRecommendedTags(authorID, limit);
+          return tagMapper.getAuthorRecommendedInterest(authorID, limit);
 
       } catch (Exception e) {
           log.error("Internal Server Error: {}", e.getMessage(), e);
           throw new InternalServerError(
-                  "An unexpected error occurred while fetching the Recommended Tags.");
+                  "An unexpected error occurred while fetching the Recommended Author Interests.");
 
       }
   }
+
+    @Override
+    public List<Tag> randomRecommendedTags(String parentTagId, String tagId, Long limit) {
+        try {
+
+            List.of(tagId, parentTagId).forEach(this::validateUUID);
+
+            return tagMapper.getRandomTags(parentTagId, tagId, limit);
+
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while fetching the Random Recommended Tags.");
+
+        }
+    }
 
   @Override
   public List<Tag> getAllTags() {

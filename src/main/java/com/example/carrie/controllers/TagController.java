@@ -27,8 +27,19 @@ public class TagController {
             @RequestParam(required = false, defaultValue = "10") Long limit
     ){
         return Success.OK("Successfully Retrieved Recommended Topics",
-                tagServiceImpl.recommendedInterests(authorID, limit));
+                tagServiceImpl.recommendedAuthorInterests(authorID, limit));
     }
+
+    @GetMapping("/recommended-random/{parentTagId}/{tagId}")
+    public ResponseEntity<?> getRecommendedRandomTags(
+            @PathVariable String parentTagId,
+            @PathVariable String tagId,
+            @RequestParam(required = false, defaultValue = "9") Long limit
+    ){
+        return Success.OK("Successfully Retrieved Recommended Topics",
+                tagServiceImpl.randomRecommendedTags(parentTagId, tagId, limit));
+    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getTagById(@PathVariable String id){

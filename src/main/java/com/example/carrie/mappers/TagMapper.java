@@ -70,7 +70,7 @@ public interface TagMapper {
           "    WHERE ai.tagid IN (SELECT tagid FROM author_tags)\n" +
           "      AND ai.authorid <> #{authorID}::uuid\n" +
           "),\n" +
-          "recommended_tag_counts AS (\n" +
+          "recommended_tag AS (\n" +
           "    SELECT \n" +
           "        ai.tagid\n" +
           "    FROM author_interest ai\n" +
@@ -83,12 +83,43 @@ public interface TagMapper {
           "    t.name,\n" +
           "    t.stories, \n" +
           "    t.popularity \n" +
-          "FROM recommended_tag_counts rtc\n" +
-          "JOIN tags t ON t.id = rtc.tagid\n" +
+          "FROM recommended_tag rt\n" +
+          "JOIN tags t ON t.id = rt.tagid\n" +
           "ORDER BY \n" +
           "    t.stories DESC,\n" +
           "    t.popularity DESC,\n" +
           "    t.name\n" +
           "LIMIT #{limit};")
-    List<Tag> getRecommendedTags(@Param("authorID") String authorID, @Param("limit") Long limit);
+    List<Tag> getAuthorRecommendedInterest(@Param("authorID") String authorID, @Param("limit") Long limit);
+  
+    @Select("WITH subtopics AS (\n" +
+            "  SELECT * FROM tags WHERE id = #{parentTagId}::uuid OR parentTagId = #{parentTagId}::uuid" +
+            "),\n" +
+            "childTopics AS (\n" +
+            "  SELECT DISTINCT *\n" +
+            "  FROM tags\n" +
+            "  WHERE parentTagId IN (SELECT id FROM subtopics)\n" +
+            "),\n" +
+            "\n" +
+            "randomized AS (\n" +
+            "  SELECT *\n" +
+            "  FROM (\n" +
+            "    SELECT * FROM subtopics\n" +
+            "    UNION\n" +
+            "    SELECT * FROM childTopics\n" +
+            "  ) AS combined\n" +
+            "  ORDER BY random()\n" +
+            "  LIMIT 9   \n" +
+            ")\n" +
+            "\n" +
+            "SELECT * FROM randomized\n" +
+            "UNION\n" +
+            "SELECT * FROM tags WHERE id = #{tagId}::uuid;")
+    List<Tag> getRandomTags(
+            @Param("parentTagId") String parentTagId,
+            @Param("tagId") String tagId, 
+            @Param("limit") Long limit
+    );
 }
+
+

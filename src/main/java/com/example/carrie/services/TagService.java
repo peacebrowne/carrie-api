@@ -9,7 +9,10 @@ public interface TagService {
     Tag getTagById(String id);
 
     List<Tag> searchTags(String term);
-    List<Tag> recommendedInterests(String authorID, Long limit);
+
+    List<Tag> recommendedAuthorInterests(String authorID, Long limit);
+
+    List<Tag> randomRecommendedTags(String parentTagId, String tagId, Long limit);
 
     Tag followTag(String tagId, String authorId);
 

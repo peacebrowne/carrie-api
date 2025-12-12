@@ -31,4 +31,10 @@ public class Tag {
   */
   private Long stories = 0L;
 
+    /*
+     * ID of the comment that is replied to.
+     * This field links the replies to a specific comment by its ID.
+     */
+    private String parentTagId;
+
 }
