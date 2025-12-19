@@ -21,12 +21,10 @@ public interface TagMapper {
   @Select("INSERT INTO tags (name) VALUES(#{name}) RETURNING *")
   Tag addTags(Tag tag);
 
-
-
   @Select("SELECT t.name FROM tags t LEFT JOIN article_tags at ON at.tagID = t.id WHERE at.articleID = #{articleID}::uuid")
   List<Tag> getArticleTags(@Param("articleID") String articleID);
 
-  @Select("SELECT DISTINCT t.name FROM tags t LEFT JOIN author_interest at ON at.tagID = t.id  WHERE at.authorID = #{authorID}::uuid")
+  @Select("SELECT DISTINCT t.* FROM tags t LEFT JOIN author_interest at ON at.tagID = t.id  WHERE at.authorID = #{authorID}::uuid")
   List<Tag> getAuthorTags(@Param("authorID") String authorID);
 
     @Select("SELECT * FROM tags WHERE name ILIKE CONCAT('%', #{term}, '%') ")
@@ -37,12 +35,6 @@ public interface TagMapper {
 
     @Select("SELECT * FROM author_interest WHERE authorId = #{authorId}::uuid AND tagId = #{tagId}::uuid")
     Optional<Tag> getSingleAuthorInterest(@Param("authorId") String authorId, @Param("tagId") String tagId);
-
-    @Select("UPDATE tags SET popularity = popularity + 1 WHERE id = #{id}::uuid RETURNING *")
-    Tag updateTagPopularity(@Param("id") String id);
-
-    @Update("UPDATE tags SET stories = stories + 1 WHERE id = #{id}::uuid")
-    void updateTagStories(@Param("id") String id);
 
     @Select("UPDATE tags SET name = #{name}, popularity = #{popularity}, stories = #{stories} WHERE id = #{id}::uuid RETURNING *")
     Tag updateTag(Tag tag);

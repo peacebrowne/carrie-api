@@ -111,6 +111,14 @@ public class ArticleController {
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 
+
+  @GetMapping("/title/{title}")
+  public ResponseEntity<?> getArticleByTitle(
+          @PathVariable String title) {
+    return Success.OK("Successfully retrieved article by title",
+            articleServiceImpl.getArticleByTitle(title));
+  }
+
   @PostMapping
   public ResponseEntity<?> addArticle(
       @Valid @RequestPart Article article,
@@ -193,6 +201,7 @@ public class ArticleController {
             articleServiceImpl.getUserReadingList(authorId));
     }
 
+
     // DELETE - Remove by readingListId
     @DeleteMapping("/unsave")
     public ResponseEntity<?>  removeFromReadingList(
@@ -201,5 +210,22 @@ public class ArticleController {
         return Success.OK("Successfully removed from reading list",
                 articleServiceImpl.removeFromReadingList(authorId, articleId));
     }
+
+  // POST - Get all saved articles for a user
+  @PostMapping("/reading-history/{articleId}/{userId}")
+  public ResponseEntity<?> addArticleReadingList(
+          @PathVariable String articleId, @PathVariable String userId) {
+    return Success.OK("Successfully Retrieved To Reading List",
+            articleServiceImpl.addUserReadingHistory(articleId, userId));
+  }
+
+  // READ - Get all saved articles for a user
+  @GetMapping("/personalized-feeds/{authorId}")
+  public ResponseEntity<?> getUserPersonalFeeds(@PathVariable String authorId,
+                                                @RequestParam(required = false, defaultValue = "10") Long limit,
+                                                @RequestParam(required = false, defaultValue = "0") Long start) {
+    return Success.OK("Successfully Retrieved To Reading List",
+            articleServiceImpl.getAuthorPersonalizedFeeds(authorId,limit, start));
+  }
 
 }

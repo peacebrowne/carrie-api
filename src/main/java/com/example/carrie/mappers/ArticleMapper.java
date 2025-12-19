@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.example.carrie.dto.ReadingList;
+import com.example.carrie.models.ReadingHistory;
 import org.apache.ibatis.annotations.*;
 
 import com.example.carrie.models.Article;
@@ -13,10 +14,19 @@ import com.example.carrie.models.Article;
 @Mapper
 public interface ArticleMapper {
 
-        @Select("SELECT * FROM articles WHERE title =#{title} AND is_trash = false")
-        List<Article> findByTitle(@Param("title") String title);
+        @Select("SELECT EXISTS (SELECT 1 FROM articles WHERE LOWER(title) = LOWER(#{title}) AND id != #{id}::uuid)")
+        boolean existsByTitleIgnoreCase(@Param("title") String title, @Param("id") String id);
 
-//        @Select("SELECT a.* FROM articles a LEFT JOIN article_tags at ON a.id = at.articleID LEFT JOIN tags t ON t.id = at.tagID WHERE t.id = #{tagId}::uuid AND a.is_trash = false ORDER BY a.updatedAt DESC LIMIT #{limit} OFFSET #{start}")
+        @Select("SELECT a.*, \n" +
+                "  (SELECT COUNT(*) FROM comments cm WHERE cm.articleID = a.id) AS totalComments, \n" +
+                "  COALESCE(SUM(cl.likes),0) AS likes, \n" +
+                "  COALESCE(SUM(cl.dislikes),0) AS dislikes \n" +
+                "FROM articles a \n" +
+                "LEFT JOIN claps cl ON cl.articleID = a.id \n" +
+                "WHERE a.title ILIKE #{title} AND a.is_trash = false GROUP BY a.id\n"
+                )
+        Article findByTitle(@Param("title") String title);
+
         @Select("WITH tag_articles AS (\n" +
                 "  SELECT articleId\n" +
                 "  FROM article_tags\n" +
@@ -454,4 +464,74 @@ public interface ArticleMapper {
         @Update("UPDATE articles SET status = 'pending', publish_date = #{dateTime} WHERE id = #{articleId}::uuid")
         void pendingArticle(String articleId, LocalDateTime dateTime);
 
+        @Select("INSERT INTO reading_history " +
+                "(userID, articleID, readAt, timeSpentSeconds) " +
+                "VALUES " +
+                "(#{userId}, #{articleId}, #{readAt} RETURNING *)")
+        ReadingHistory addReadHistory(
+                @Param("userId") String userId,
+                @Param("articleId") String articleId
+        );
+
+        @Update("UPDATE reading_history " +
+                "SET timeSpentSeconds = timeSpentSeconds + #{timeSpent} " +
+                "WHERE user_id = #{userId} AND article_id = #{articleId}")
+        int updateTimeSpent(
+                @Param("userId") String userId,
+                @Param("articleId") String articleId,
+                @Param("timeSpent") Integer timeSpent
+        );
+
+        @Select("SELECT \n" +
+                "    a.*,\n" +
+                "    COUNT(at.tagid) AS interest_match_count  \n" +
+                "FROM \n" +
+                "    articles a\n" +
+                "INNER JOIN article_tags at ON at.articleid = a.id\n" +
+                "INNER JOIN author_interest ai ON ai.tagid = at.tagid \n" +
+                "    AND ai.authorId = #{userId}::uuid  \n" +
+                "LEFT JOIN reading_history h \n" +
+                "    ON h.articleId = a.id \n" +
+                "    AND h.userId = #{userId}::uuid\n" +
+                "WHERE \n" +
+                "    a.status = 'published'\n" +
+                "    AND a.is_trash = false\n" +
+                "    AND h.articleId IS NULL  \n" +
+                "GROUP BY \n" +
+                "    a.id, a.title, a.description, a.authorid, a.publish_date\n" +
+                "ORDER BY RANDOM(),\n" +
+                "    interest_match_count DESC,  \n" +
+                "    a.publish_date DESC        \n" +
+                "LIMIT #{limit} OFFSET #{start};")
+        List<Article> findUserPersonalizedFeeds(@Param("userId") String userId,
+                                                @Param("limit") Long limit,
+                                                @Param("start") Long start);
+
+        @Select("SELECT \n" +
+                "  COUNT(*) AS total \n" +
+                "  FROM (\n" +
+                "      SELECT \n" +
+                "        a.id,  \n" +
+                "        a.title,  \n" +
+                "        a.description, \n" +
+                "        a.authorid AS authorId,   \n" +
+                "        a.publish_date,\n" +
+                "        COUNT(at.tagid) AS interest_match_count  \n" +
+                "      FROM  articles a INNER JOIN article_tags at ON at.articleid = a.id\n" +
+                "      INNER JOIN author_interest ai ON ai.tagid = at.tagid\n" +
+                "      AND ai.authorId = #{userId}::uuid\n" +
+                "      LEFT JOIN reading_history h ON h.articleId = a.id\n" +
+                "      AND h.userId = #{userId}::uuid WHERE a.status = 'published'\n" +
+                "      AND a.is_trash = false\n" +
+                "      AND h.articleId IS NULL\n" +
+                "      GROUP BY \n" +
+                "        a.id, \n" +
+                "        a.title, \n" +
+                "        a.description, \n" +
+                "        a.authorid, \n" +
+                "        a.publish_date \n" +
+                "      ORDER BY interest_match_count DESC,\n" +
+                "        a.publish_date DESC\n" +
+                ");")
+        Long totalFindUserPersonalizedFeeds(@Param("userId") String userId);
 }

@@ -69,4 +69,14 @@ public class TagController {
         return Success.OK("Successfully updated tag follower", tagServiceImpl.unfollowTag(tagId, authorId));
     }
 
+    @GetMapping("/author-interest/{tagId}/{authorId}")
+    public ResponseEntity<?> getSingleAuthorInterest(@PathVariable String tagId, @PathVariable String authorId){
+        return Success.OK("Successfully Retrieved Tag", tagServiceImpl.getSingleAuthorInterest(tagId, authorId));
+    }
+
+    @GetMapping("/author-interests/{authorId}")
+    public ResponseEntity<?> getAuthorInterests(@PathVariable String authorId){
+        return Success.OK("Successfully Retrieved Tag", tagServiceImpl.getAuthorInterest(authorId));
+    }
+
 }

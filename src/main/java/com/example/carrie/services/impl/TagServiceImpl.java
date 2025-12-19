@@ -222,15 +222,19 @@ public class TagServiceImpl implements TagService {
 
   }
 
-  protected List<String> getAuthorInterest(String authorID) {
+  public List<Tag> getAuthorInterest(String authorID) {
     try {
 
+        validateUUID(authorID);
       /*
-       * Iterate through the list of author objects and return a list of names for
-       * each author
-       * Return the tag name
+       * Iterate through the list of author objects and return a list of names for each author.
        */
-      return tagMapper.getAuthorTags(authorID).stream().map(Tag::getName).collect(Collectors.toList());
+      return tagMapper.getAuthorTags(authorID);
+
+    }catch (BadRequest e) {
+        log.error("BadRequest: {}", e.getMessage(), e);
+        throw new InternalServerError(
+                "An unexpected error occurred while fetching the Author Interests.");
 
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -354,9 +358,27 @@ public class TagServiceImpl implements TagService {
         }
   }
 
+    @Override
+    public Tag getSingleAuthorInterest(String tagId, String authorId) {
+        try {
+            List.of(tagId, authorId).forEach(this::validateUUID);
+            Optional<Tag> tag = tagMapper.getSingleAuthorInterest(authorId, tagId);
+            return tag.orElse(null);
+        }
+        catch ( BadRequest e) {
+            log.error("BadRequest: {}", e.getMessage(), e);
+            throw e;
+        }
+        catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while getting a single author interest");
+        }
+    }
+
     private void validateUUID(String id) {
         if (!UUIDValidator.isValidUUID(id)) {
-            throw new BadRequest("Invalid Author ID");
+            throw new BadRequest("Invalid ID");
         }
     }
 

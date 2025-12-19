@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS authors (
 -- Create the articles table
 CREATE TABLE IF NOT EXISTS articles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title TEXT NOT NULL,
+    title TEXT NOT NULL UNIQUE,
     authorID UUID NOT NULL,
     description TEXT,
     content TEXT,
@@ -131,12 +131,23 @@ CREATE TABLE IF NOT EXISTS reading_list (
     UNIQUE(authorID, articleID)
 )
 
-CREATE TABLE IF NOT EXISTS trash (
+    CREATE TABLE IF NOT EXISTS trash (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        articleID UUID UNIQUE NOT NULL,
+        deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (articleID) REFERENCES articles(id) ON DELETE CASCADE
+    )
+
+
+CREATE TABLE IF NOT EXISTS reading_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    articleID UUID UNIQUE NOT NULL,
-    deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (articleID) REFERENCES articles(id) ON DELETE CASCADE
-)
+    userID UUID NOT NULL,
+    articleID UUID NOT NULL,
+    readAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userID) REFERENCES authors(id) ON DELETE CASCADE,
+    FOREIGN KEY (articleID) REFERENCES articles(id) ON DELETE CASCADE,
+    UNIQUE(userID,articleID)
+    )
 
 -- QUARTZ
 -- Quartz Scheduler Tables for PostgreSQL

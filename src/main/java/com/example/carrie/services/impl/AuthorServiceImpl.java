@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,8 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
             validateAuthor(id);
 
             // Retrieve the list of interests associated with the author
-            List<String> authorInterest = tagServiceImpl.getAuthorInterest(id);
+            List<Tag> authorInterestTag = tagServiceImpl.getAuthorInterest(id);
+            List<String> authorInterest = authorInterestTag.stream().map(Tag::getName).collect(Collectors.toList());
 
             Author author = authorMapper.findById(id);
 
@@ -294,7 +296,8 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
 
             authors.forEach( author -> {
                 // Retrieve the list of interests associated with the author
-                List<String> authorInterest = tagServiceImpl.getAuthorInterest(author.getId());
+                List<Tag> authorInterestTag = tagServiceImpl.getAuthorInterest(author.getId());
+                List<String> authorInterest = authorInterestTag.stream().map(Tag::getName).collect(Collectors.toList());
 
                 // Set the retrieved interest to the author
                 author.setInterests(authorInterest);

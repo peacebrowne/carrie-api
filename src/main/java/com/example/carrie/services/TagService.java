@@ -17,4 +17,6 @@ public interface TagService {
     Tag followTag(String tagId, String authorId);
 
     Tag unfollowTag(String tagId, String authorId);
+
+    Tag getSingleAuthorInterest(String tagId, String authorId);
 }
