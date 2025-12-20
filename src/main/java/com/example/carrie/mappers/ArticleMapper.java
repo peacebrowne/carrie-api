@@ -390,7 +390,7 @@ public interface ArticleMapper {
         @Delete("DELETE FROM articles WHERE id = #{id}::uuid")
         void deleteArticle(@Param("id") String id);
 
-        @Select("SELECT COUNT(*) AS total, COUNT(CASE WHEN a.status = 'pending' THEN 1 END) AS pending, COUNT(CASE WHEN a.status = 'published' THEN 1 END) AS published, COUNT(CASE WHEN a.status = 'draft' THEN 1 END) AS draft, COALESCE(SUM(cl.likes), 0) AS likes, COALESCE(SUM(cl.dislikes), 0) AS dislikes FROM articles a LEFT JOIN claps cl ON cl.articleId = a.id LEFT JOIN authors ath ON ath.id = a.authorId WHERE a.authorId = #{authorId}::uuid")
+        @Select("SELECT COUNT(*) AS total, COUNT(CASE WHEN a.status = 'scheduled' THEN 1 END) AS scheduled, COUNT(CASE WHEN a.status = 'published' THEN 1 END) AS published, COUNT(CASE WHEN a.status = 'draft' THEN 1 END) AS draft, COALESCE(SUM(cl.likes), 0) AS likes, COALESCE(SUM(cl.dislikes), 0) AS dislikes FROM articles a LEFT JOIN claps cl ON cl.articleId = a.id LEFT JOIN authors ath ON ath.id = a.authorId WHERE a.authorId = #{authorId}::uuid")
         Map<String, Object> getTotalArticleAnalytics(@Param("authorId") String authorId);
 
         @Select("INSERT INTO article_shares (article_id, shared_by) VALUES (#{articleId}::uuid, #{sharedBy}::uuid) RETURNING *")
@@ -461,8 +461,8 @@ public interface ArticleMapper {
         @Update("UPDATE articles SET status = 'published' WHERE id = #{id}::uuid")
         void publishArticle(String id);
 
-        @Update("UPDATE articles SET status = 'pending', publish_date = #{dateTime} WHERE id = #{articleId}::uuid")
-        void pendingArticle(String articleId, LocalDateTime dateTime);
+        @Update("UPDATE articles SET status = 'scheduled', publish_date = #{dateTime} WHERE id = #{articleId}::uuid")
+        void scheduledArticle(String articleId, LocalDateTime dateTime);
 
         @Select("INSERT INTO reading_history " +
                 "(userID, articleID, readAt, timeSpentSeconds) " +

@@ -12,17 +12,13 @@ import com.example.carrie.mappers.ImageMapper;
 import com.example.carrie.mappers.TagMapper;
 import com.example.carrie.models.ReadingHistory;
 import com.example.carrie.services.ArticleService;
-import com.example.carrie.success.Success;
 import com.example.carrie.utils.validations.UUIDValidator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.carrie.dto.CustomDto;
@@ -286,7 +282,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     try {
       Article existingArticle = getArticleById(id);
 
-      // 1. ONLY check the DB if the title in the request is actually different
+      // ONLY check the DB if the title in the request is actually different
       // from what is already saved in 'existingArticle'
       if (article.getTitle() != null && !article.getTitle().equalsIgnoreCase(existingArticle.getTitle())) {
 
@@ -300,21 +296,22 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
         existingArticle.setTitle(article.getTitle());
       }
 
-      // 2. Update other fields (Content, Description, etc.)
+      // Update other fields (Content, Description, etc.)
       // These don't need uniqueness checks, so they are safe to auto-save
+      Optional.ofNullable(article.getTitle()).ifPresent(existingArticle::setTitle);
       Optional.ofNullable(article.getContent()).ifPresent(existingArticle::setContent);
       Optional.ofNullable(article.getStatus()).ifPresent(existingArticle::setStatus);
       Optional.ofNullable(article.getDescription()).ifPresent(existingArticle::setDescription);
 
       existingArticle.setUpdatedAt(LocalDateTime.now());
 
-      // 3. Save to DB
+      // Save to DB
       articleMapper.editArticle(existingArticle);
 
       return existingArticle;
 
-    } catch (BadRequest e) {
-      throw e; // Pass through the "Title Taken" error
+    } catch (BadRequest | NotFound e) {
+      throw e;
     } catch (Exception e) {
       log.error("Auto-save failed: {}", e.getMessage());
       throw new InternalServerError("Update failed.");
@@ -490,8 +487,8 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   private void validateArticleStatus(String status) {
     ArticleStatus articleStatus = ArticleStatus.valueOf(status.toUpperCase());
 
-    if (!Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.PENDING, ArticleStatus.PUBLISHED).contains(articleStatus)) {
-      String validStatuses = Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.PENDING, ArticleStatus.PUBLISHED)
+    if (!Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.SCHEDULED, ArticleStatus.PUBLISHED).contains(articleStatus)) {
+      String validStatuses = Arrays.asList(ArticleStatus.DRAFT, ArticleStatus.SCHEDULED, ArticleStatus.PUBLISHED)
           .toString();
       throw new BadRequest("Invalid Article status. It should be one of: " + validStatuses);
     }
@@ -617,7 +614,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime dateTime = LocalDateTime.parse(scheduledTime, formatter);
-            articleMapper.pendingArticle(articleId, dateTime);
+            articleMapper.scheduledArticle(articleId, dateTime);
             return jobServiceImpl.scheduleArticlePublish(articleId, dateTime);
 
         } catch (NotFound e) {

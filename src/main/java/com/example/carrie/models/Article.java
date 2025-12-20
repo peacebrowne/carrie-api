@@ -74,6 +74,6 @@ public class Article {
 
   private Long totalComments = 0L;
 
-  @NotEmpty(message = "Invalid Article status. It should be one of 'Draft, Pending, Publish'")
+  @NotEmpty(message = "Invalid Article status. It should be one of 'Draft, Scheduled, Publish'")
   private String status;
 }
