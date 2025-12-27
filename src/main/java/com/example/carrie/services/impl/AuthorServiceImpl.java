@@ -319,6 +319,24 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
         }
     }
 
+    public List<AuthorDto> getRecommendedInterestAuthor(String authorId, String tagId, Long limit){
+        try{
+            validateUUID(tagId);
+            validateAuthor(authorId);
+
+            return authorMapper.findRecommendedInterestAuthor(authorId, tagId, limit);
+
+        }catch(BadRequest | NotFound e){
+            log.error("Validation Error: {}", e.getMessage(), e);
+            throw e;
+        }catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while fetching the Recommended tags Authors.");
+
+        }
+    }
+
     private void validateAuthorFollower(String followerAuthor, String followedAuthor) {
         Arrays.asList(followerAuthor, followedAuthor).forEach(this::getAuthorById);
     }
@@ -334,8 +352,8 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
         // Validate Author ID
         validateUUID(authorID);
 
-        Author author = authorMapper.findById(authorID);
-        if (author == null) {
+        boolean isAuthorExist = authorMapper.isAuthorExist(authorID);
+        if (!isAuthorExist) {
             throw new NotFound("Author does not exist!");
         }
     }

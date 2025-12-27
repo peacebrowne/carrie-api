@@ -81,13 +81,47 @@ public interface AuthorMapper {
             "     JOIN author_interest ai ON ai.authorId = a.id " +
             "       WHERE ai.tagId = #{tagId}::uuid " +
             " </if> " +
-            "ORDER BY RANDOM() " +
+            "ORDER BY a.id " +
             "LIMIT #{limit} " +
             "</script>")
     List<AuthorDto> getRecommendedAuthors(
             @Param("authorID") String authorID,
             @Param("tagId") String tagId,
             @Param("limit") Long limit);
+
+
+    @Select("WITH author_following_friends AS (\n" +
+            "    SELECT author AS followed_by_me\n" +
+            "    FROM author_followers\n" +
+            "    WHERE follower = #{authorId}::uuid\n" +
+            "),\n" +
+            "potential_recommendations AS (\n" +
+            "    SELECT af.author AS suggested_author, COUNT(*) as mutual_friend_count\n" +
+            "    FROM author_followers af\n" +
+            "    JOIN author_following_friends aff ON af.follower = aff.followed_by_me\n" +
+            "    WHERE af.author != #{authorId}::uuid\n" +
+            "      AND af.author NOT IN (SELECT followed_by_me FROM author_following_friends)\n" +
+            "    GROUP BY af.author\n" +
+            "),\n" +
+            "interest_filtered_authors AS (\n" +
+            "    SELECT DISTINCT pa.suggested_author, pa.mutual_friend_count\n" +
+            "    FROM potential_recommendations pa\n" +
+            "    JOIN author_interest ai ON ai.authorId = pa.suggested_author\n" +
+            "     WHERE ai.tagId = #{tagId}::uuid\n" +
+            ")\n" +
+            "SELECT a.*, ifa.mutual_friend_count\n" +
+            "FROM authors a\n" +
+            "JOIN interest_filtered_authors ifa ON a.id = ifa.suggested_author\n" +
+            "ORDER BY ifa.mutual_friend_count DESC, a.id\n" +
+            "LIMIT #{limit};\n"
+            )
+    List<AuthorDto> findRecommendedInterestAuthor(
+            @Param("authorId") String authorId,
+            @Param("tagId") String tagId,
+            @Param("limit") Long limit);
+
+    @Select("SELECT EXISTS (SELECT 1 FROM authors WHERE id = #{id}::uuid)")
+    boolean isAuthorExist(@Param("id") String id);
 
 
 }

@@ -1,15 +1,14 @@
 package com.example.carrie.services.impl;
 
+import com.example.carrie.dto.AnalyticsDto;
+import com.example.carrie.dto.DailyStatsDto;
 import com.example.carrie.dto.ReadingList;
 import com.example.carrie.enumerators.ArticleStatus;
 import com.example.carrie.exceptions.custom.BadRequest;
 import com.example.carrie.exceptions.custom.Conflict;
 import com.example.carrie.exceptions.custom.InternalServerError;
 import com.example.carrie.exceptions.custom.NotFound;
-import com.example.carrie.mappers.ArticleMapper;
-import com.example.carrie.mappers.AuthorMapper;
-import com.example.carrie.mappers.ImageMapper;
-import com.example.carrie.mappers.TagMapper;
+import com.example.carrie.mappers.*;
 import com.example.carrie.models.ReadingHistory;
 import com.example.carrie.services.ArticleService;
 import com.example.carrie.utils.validations.UUIDValidator;
@@ -40,13 +39,15 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   private static final Logger log = LoggerFactory.getLogger(ArticleServiceImpl.class);
   private final TagServiceImpl tagServiceImpl;
   private final JobServiceImpl jobServiceImpl;
+  private final ClapMapper clapMapper;
 
     public ArticleServiceImpl(
-            ArticleMapper articleMapper, AuthorMapper authorMapper,
+            ArticleMapper articleMapper, AuthorMapper authorMapper, ClapMapper clapMapper,
             TagMapper tagMapper, ImageMapper imageMapper, JobServiceImpl jobServiceImpl) {
     super(imageMapper);
     this.articleMapper = articleMapper;
     this.authorMapper = authorMapper;
+    this.clapMapper = clapMapper;
     this.tagServiceImpl = new TagServiceImpl(tagMapper);
     this.jobServiceImpl = jobServiceImpl;
     }
@@ -305,6 +306,16 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
       existingArticle.setUpdatedAt(LocalDateTime.now());
 
+      // Add article's image
+      addImage(image, existingArticle.getId(), "article");
+
+      // Update the article's tags with the new list and return the updated tag names
+      List<String> tagNames = tagServiceImpl.editArticleTags(id, article.getTags());
+
+      // Set the updated tags to the existing article
+      existingArticle.setTags(tagNames);
+
+
       // Save to DB
       articleMapper.editArticle(existingArticle);
 
@@ -318,59 +329,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     }
   }
 
-  /*public Article editArticle(Article article, MultipartFile image, String id) {
 
-    try {
-      // Retrieve the existing article by its ID
-      Article existingArticle = getArticleById(id);
-
-      Article articleWithTitle = articleMapper.findByTitle(article.getTitle());
-      if (
-              articleWithTitle != null &&
-              Objects.equals(articleWithTitle.getTitle(), article.getTitle())
-              && !Objects.equals(articleWithTitle.getAuthorID(), article.getAuthorID()))
-      {
-        throw new BadRequest("This title is already in use.");
-      }
-
-      // Update the article's data if a new value is provided
-      Optional.ofNullable(article.getContent()).ifPresent(existingArticle::setContent);
-      Optional.ofNullable(article.getTitle()).ifPresent(existingArticle::setTitle);
-      Optional.ofNullable(article.getStatus()).ifPresent(existingArticle::setStatus);
-      Optional.ofNullable(article.getPublishedAt()).ifPresent(existingArticle::setPublishedAt);
-      Optional.ofNullable(article.getDescription())
-          .ifPresent(existingArticle::setDescription);
-
-      // Set the current timestamp as the updated date for the article
-      LocalDateTime currentDate = LocalDateTime.now();
-      existingArticle.setUpdatedAt(currentDate);
-
-      // Update articles
-      articleMapper.editArticle(existingArticle);
-
-      // Add article's image
-      addImage(image, existingArticle.getId(), "article");
-
-      // Update the article's tags with the new list and return the updated tag names
-      List<String> tagNames = tagServiceImpl.editArticleTags(id, article.getTags());
-
-      // Set the updated tags to the existing article
-      existingArticle.setTags(tagNames);
-
-      return existingArticle;
-
-    } catch (BadRequest | NotFound e) {
-      log.error("Validation Error: {}", e.getMessage(), e);
-      throw e;
-    } catch (Exception e) {
-
-      log.error("Internal Server Error: {}", e.getMessage(), e);
-      throw new InternalServerError(
-          "An unexpected error occurred while editing an Article.");
-
-    }
-  }
-*/
   @Override
   public Article deleteArticle(String id) {
     try {
@@ -519,19 +478,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     }
   }
 
-   @Override
-   public Map<String, Object> getArticleAnalytics(String id) {
-    try {
-      Map<String, Object> analyticsDto = articleMapper.getTotalArticleAnalytics(id);
-      System.out.println(analyticsDto);
-
-      return analyticsDto;
-    } catch (Exception e) {
-      log.error("Internal Server Error: {}", e.getMessage(), e);
-      throw new InternalServerError(
-          "An unexpected error occurred while fetching Article Analytics.");
-    }
-  }
 
     @Override
     public ReadingList getReadingListEntry(String authorId, String articleId) {
@@ -666,8 +612,6 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
   public ReadingHistory addUserReadingHistory(String userId, String articleId) {
     try {
 
-
-
       List.of(userId, articleId).forEach(this::validateUUID);
 
       // Debug logging to show this is running on a different thread
@@ -716,10 +660,181 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
       throw new InternalServerError(
-              "An unexpected error occurred while fetching an Author's Article.");
+              "An unexpected error occurred while fetching user personalized feeds.");
     }
 
   }
 
+  public List<Article> getTrendingFeeds() {
+    try {
+      // Get all articles associated with an author by ID
+      List<Article> articles = articleMapper.findTrendingArticles();
 
+      // Add related tags to articles
+      articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
+      return articles;
+
+    } catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while fetching trending feeds.");
+    }
+  }
+
+
+    public List<Article> getLatestTagFeeds(String tagId) {
+      try {
+
+        validateUUID(tagId);
+        // Get all articles associated with an author by ID
+        List<Article> articles = articleMapper.findLatestTagArticles(tagId);
+
+        // Add related tags to articles
+        articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
+        return articles;
+
+      }catch (BadRequest e) {
+        log.error("Validation Error: {}", e.getMessage(), e);
+        throw e;
+      }
+      catch (Exception e) {
+        log.error("Internal Server Error: {}", e.getMessage(), e);
+        throw new InternalServerError(
+                "An unexpected error occurred while fetching latest tag feeds.");
+      }
+    }
+
+  public void recordView(String articleId, String userId) {
+    try {
+
+      boolean isViewExist = articleMapper.isViewExist(articleId, userId);
+      if (isViewExist) {
+        throw new Conflict("User already viewed!");
+      }
+
+      List.of(articleId, userId).forEach(this::validateUUID);
+      articleMapper.insertArticleView(articleId, userId);
+
+    }catch (BadRequest | Conflict e) {
+      log.error("Validation Error: {}", e.getMessage(), e);
+      throw e;
+    }
+    catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while create an article views.");
+    }
+  }
+
+  public void recordRead(String articleId, String userId) {
+    try {
+
+      boolean isReadExist = articleMapper.isReadExist(articleId, userId);
+      if (isReadExist) {
+        throw new Conflict("User already read!");
+      }
+
+      List.of(articleId, userId).forEach(this::validateUUID);
+      articleMapper.insertArticleRead(articleId, userId);
+
+    }catch (BadRequest | Conflict e) {
+      log.error("Validation Error: {}", e.getMessage(), e);
+      throw e;
+    }
+    catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while create an article reads.");
+    }
+  }
+
+  public void recordReadSession(String articleId, String userId, int duration) {
+    try {
+
+      List.of(articleId, userId).forEach(this::validateUUID);
+      articleMapper.insertReadSession(articleId, userId, duration);
+
+    }catch (BadRequest e) {
+      log.error("Validation Error: {}", e.getMessage(), e);
+      throw e;
+    }
+    catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while creating an article reads.");
+    }
+  }
+
+  @Override
+  public AnalyticsDto getArticleAnalytics(String articleId) {
+
+    try {
+      validateUUID(articleId);
+      int views = articleMapper.countArticleViews(articleId);
+      int reads = articleMapper.countArticleReads(articleId);
+      int avgReadTime = articleMapper.avgReadTime(articleId);
+      int claps = clapMapper.articleClaps(articleId);
+      return new AnalyticsDto(views, reads, avgReadTime, claps);
+
+    }catch (BadRequest e) {
+      log.error("Validation Error: {}", e.getMessage(), e);
+      throw e;
+    }
+    catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while create an article reads.");
+    }
+  }
+
+  public Map<String, Long> getAuthorStats(String authorId, String duration ) {
+    try {
+
+      validateUUID(authorId);
+      return articleMapper.getAuthorStats(authorId, duration);
+
+    }catch (BadRequest e) {
+      log.error("Validation Error: {}", e.getMessage(), e);
+      throw e;
+    }
+    catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while getting author stats.");
+    }
+  }
+
+  public List<DailyStatsDto> getAuthorDailyStats(String authorId ) {
+    try {
+
+      validateUUID(authorId);
+      return articleMapper.getAuthorDailyStats(authorId);
+
+    }catch (BadRequest e) {
+      log.error("Validation Error: {}", e.getMessage(), e);
+      throw e;
+    }
+    catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while getting author daily stats.");
+    }
+  }
+
+  public List<Map<String, Long>> getAuthorBestPerformingArticles(String authorId ) {
+    try {
+
+      validateUUID(authorId);
+      return articleMapper.getAuthorBestPerformingArticles(authorId);
+
+    }catch (BadRequest e) {
+      log.error("Validation Error: {}", e.getMessage(), e);
+      throw e;
+    }
+    catch (Exception e) {
+      log.error("Internal Server Error: {}", e.getMessage(), e);
+      throw new InternalServerError(
+              "An unexpected error occurred while getting author best performing articles.");
+    }
+  }
 }

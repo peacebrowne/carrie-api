@@ -14,6 +14,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 @Service
@@ -40,7 +41,7 @@ public class JWTService {
                 .add(claims)
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000))
+                .expiration(new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)))
                 .and()
                 .signWith(getKey())
                 .compact();

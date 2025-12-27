@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.example.carrie.dto.DailyStatsDto;
 import com.example.carrie.dto.ReadingList;
 import com.example.carrie.models.ReadingHistory;
 import org.apache.ibatis.annotations.*;
@@ -17,16 +18,16 @@ public interface ArticleMapper {
         @Select("SELECT EXISTS (SELECT 1 FROM articles WHERE LOWER(title) = LOWER(#{title}) AND id != #{id}::uuid)")
         boolean existsByTitleIgnoreCase(@Param("title") String title, @Param("id") String id);
 
-        @Select("SELECT a.*, \n" +
-                "  (SELECT COUNT(*) FROM comments cm WHERE cm.articleID = a.id) AS totalComments, \n" +
-                "  COALESCE(SUM(cl.likes),0) AS likes, \n" +
-                "  COALESCE(SUM(cl.dislikes),0) AS dislikes \n" +
-                "FROM articles a \n" +
-                "LEFT JOIN claps cl ON cl.articleID = a.id \n" +
-                "WHERE a.title ILIKE #{title} AND a.is_trash = false GROUP BY a.id\n"
-                )
+        @Select("SELECT a.*, " +
+                "  (SELECT COUNT(*) FROM comments cm WHERE cm.articleID = a.id) AS totalComments, " +
+                "  COALESCE(SUM(cl.likes),0) AS likes, " +
+                "  COALESCE(SUM(cl.dislikes),0) AS dislikes " +
+                "FROM articles a " +
+                "LEFT JOIN claps cl ON cl.articleID = a.id " +
+                "WHERE LOWER(REGEXP_REPLACE(a.title, '[^a-zA-Z0-9]+', ' ', 'g')) ILIKE '%' || LOWER(#{title}) || '%' " +
+                "AND a.is_trash = false " +
+                "GROUP BY a.id")
         Article findByTitle(@Param("title") String title);
-
         @Select("WITH tag_articles AS (\n" +
                 "  SELECT articleId\n" +
                 "  FROM article_tags\n" +
@@ -390,9 +391,6 @@ public interface ArticleMapper {
         @Delete("DELETE FROM articles WHERE id = #{id}::uuid")
         void deleteArticle(@Param("id") String id);
 
-        @Select("SELECT COUNT(*) AS total, COUNT(CASE WHEN a.status = 'scheduled' THEN 1 END) AS scheduled, COUNT(CASE WHEN a.status = 'published' THEN 1 END) AS published, COUNT(CASE WHEN a.status = 'draft' THEN 1 END) AS draft, COALESCE(SUM(cl.likes), 0) AS likes, COALESCE(SUM(cl.dislikes), 0) AS dislikes FROM articles a LEFT JOIN claps cl ON cl.articleId = a.id LEFT JOIN authors ath ON ath.id = a.authorId WHERE a.authorId = #{authorId}::uuid")
-        Map<String, Object> getTotalArticleAnalytics(@Param("authorId") String authorId);
-
         @Select("INSERT INTO article_shares (article_id, shared_by) VALUES (#{articleId}::uuid, #{sharedBy}::uuid) RETURNING *")
         Map<String, Object> shareArticle(@Param("articleId") String articleId,
                         @Param("sharedBy") String sharedBy);
@@ -405,7 +403,7 @@ public interface ArticleMapper {
                         @Param("start") Long start);
 
         @Select("SELECT \n" +
-                "  a.*,\n" +
+                "a.*,\n" +
                 "\n" +
                 "  (SELECT COUNT(*) FROM comments cm WHERE cm.articleID = a.id) AS totalComments,\n" +
                 "\n" +
@@ -451,7 +449,6 @@ public interface ArticleMapper {
         @Select("SELECT * FROM reading_list WHERE authorId = #{authorId}::uuid AND articleId = #{articleId}::uuid")
         ReadingList getList(@Param("authorId") String authorId, @Param("articleId") String articleId);
 
-
         @Select("SELECT COUNT(*) FROM reading_list WHERE authorId = #{authorId}::uuid")
         Long totalUserReadingList(@Param("authorId") String authorId);
 
@@ -482,26 +479,34 @@ public interface ArticleMapper {
                 @Param("timeSpent") Integer timeSpent
         );
 
-        @Select("SELECT \n" +
-                "    a.*,\n" +
-                "    COUNT(at.tagid) AS interest_match_count  \n" +
-                "FROM \n" +
-                "    articles a\n" +
+        @Select("SELECT\n" +
+                "  a.*,\n" +
+                "  COALESCE(cl.likes, 0) AS likes,\n" +
+                "  (\n" +
+                "    COUNT(DISTINCT at.tagid) * 3\n" +
+                "    + COALESCE(cl.likes, 0) * 0.2\n" +
+                "    + CASE\n" +
+                "        WHEN a.createdAt >= NOW() - INTERVAL '1 day' THEN 5\n" +
+                "        WHEN a.createdAt >= NOW() - INTERVAL '3 days' THEN 3\n" +
+                "        WHEN a.createdAt >= NOW() - INTERVAL '7 days' THEN 1\n" +
+                "        ELSE 0\n" +
+                "      END\n" +
+                "  ) AS score\n" +
+                "FROM articles a\n" +
                 "INNER JOIN article_tags at ON at.articleid = a.id\n" +
-                "INNER JOIN author_interest ai ON ai.tagid = at.tagid \n" +
-                "    AND ai.authorId = #{userId}::uuid  \n" +
-                "LEFT JOIN reading_history h \n" +
-                "    ON h.articleId = a.id \n" +
-                "    AND h.userId = #{userId}::uuid\n" +
-                "WHERE \n" +
-                "    a.status = 'published'\n" +
-                "    AND a.is_trash = false\n" +
-                "    AND h.articleId IS NULL  \n" +
-                "GROUP BY \n" +
-                "    a.id, a.title, a.description, a.authorid, a.publish_date\n" +
-                "ORDER BY RANDOM(),\n" +
-                "    interest_match_count DESC,  \n" +
-                "    a.publish_date DESC        \n" +
+                "INNER JOIN author_interest ai ON ai.tagid = at.tagid AND ai.authorId = #{userId}::uuid\n" +
+                "LEFT JOIN reading_history h ON h.articleId = a.id AND h.userId = #{userId}::uuid\n" +
+                "LEFT JOIN (\n" +
+                "  SELECT articleid, SUM(likes) AS likes\n" +
+                "  FROM claps\n" +
+                "  GROUP BY articleid\n" +
+                ") cl ON cl.articleid = a.id\n" +
+                "WHERE a.status = 'published'\n" +
+                "  AND a.is_trash = false\n" +
+                "  AND h.articleId IS NULL\n" +
+                "  AND a.createdAt >= NOW() - INTERVAL '1 YEAR'\n" +
+                "GROUP BY a.id, a.title, a.createdAt, a.authorId, cl.likes\n" +
+                "ORDER BY score DESC\n" +
                 "LIMIT #{limit} OFFSET #{start};")
         List<Article> findUserPersonalizedFeeds(@Param("userId") String userId,
                                                 @Param("limit") Long limit,
@@ -534,4 +539,155 @@ public interface ArticleMapper {
                 "        a.publish_date DESC\n" +
                 ");")
         Long totalFindUserPersonalizedFeeds(@Param("userId") String userId);
+
+        @Select("SELECT\n" +
+                "  a.*,\n" +
+                "  COALESCE(c.likes, 0) AS likes,\n" +
+                "  COALESCE(c.dislikes, 0) AS dislikes\n" +
+                "FROM articles a\n" +
+                "JOIN claps c ON c.articleid = a.id\n" +
+                "WHERE a.createdAt >= NOW() - INTERVAL '7 days'\n" +
+                "GROUP BY a.id, a.title, c.likes, c.dislikes\n" +
+                "ORDER BY likes DESC\n" +
+                "LIMIT 10;")
+        List<Article>findTrendingArticles();
+
+    @Select("SELECT\n" +
+            "  a.*,\n" +
+            "  COALESCE(c.likes, 0) AS likes,\n" +
+            "  COALESCE(c.dislikes, 0) AS dislikes\n" +
+            "FROM articles a\n" +
+            "JOIN claps c ON c.articleid = a.id\n" +
+            "JOIN article_tags art ON art.articleid = a.id\n" +
+            "WHERE art.tagid = #{tagId}::uuid\n" +
+            "AND a.createdAt >= NOW() - INTERVAL '7 days'\n" +
+            "GROUP BY a.id, a.title, c.likes, c.dislikes\n" +
+            "ORDER BY likes DESC\n" +
+            "LIMIT 10;")
+    List<Article>findLatestTagArticles(@Param("tagId") String tagId);
+
+        @Insert("INSERT INTO article_views (articleId, userId) VALUES (#{articleId}::uuid, #{userId}::uuid)")
+        void insertArticleView(@Param("articleId") String articleId, @Param("userId") String userId);
+
+        @Insert("INSERT INTO article_reads (articleId, userId) VALUES (#{articleId}::uuid, #{userId}::uuid)")
+        void insertArticleRead(@Param("articleId") String articleId, @Param("userId") String userId);
+
+        @Insert("INSERT INTO article_read_sessions (articleId, userId, duration) VALUES (#{articleId}::uuid, #{userId}::uuid, #{duration})")
+        void insertReadSession(@Param("articleId") String articleId, @Param("userId") String userId,@Param("duration") int duration);
+
+        @Select("SELECT EXISTS (SELECT 1 FROM article_views WHERE articleId = #{articleId}::uuid AND userId = #{userId}::uuid)")
+        boolean isViewExist(@Param("articleId") String articleId, @Param("userId") String userId);
+
+        @Select("SELECT EXISTS (SELECT 1 FROM article_reads WHERE articleId = #{articleId}::uuid AND userId = #{userId}::uuid)")
+        boolean isReadExist(@Param("articleId") String articleId, @Param("userId") String userId);
+
+        @Select("SELECT COUNT(*) FROM article_views WHERE articleId = #{articleId}::uuid")
+        int countArticleViews(String articleId);
+
+        @Select("SELECT COUNT(*) FROM article_reads WHERE articleId = #{articleId}::uuid")
+        int countArticleReads(String articleId);
+
+        @Select("SELECT COALESCE(AVG(duration), 0) FROM article_read_sessions  WHERE articleId = #{articleId}::uuid")
+        Integer avgReadTime(String articleId);
+
+        @Select("<script>\n" +
+                "WITH target_articles AS (\n" +
+                "    SELECT id FROM articles WHERE authorId = #{authorId}::uuid\n" +
+                "),\n" +
+                "time_windows AS (\n" +
+                "    SELECT \n" +
+                "        CASE \n" +
+                "            WHEN #{duration} = 'this_year' THEN DATE_TRUNC('YEAR', NOW()) \n" +
+                "            WHEN #{duration} IS NOT NULL AND #{duration} != '' THEN NOW() - CAST(#{duration} AS INTERVAL)\n" +
+                "            ELSE '1970-01-01'::timestamp \n" +
+                "        END as curr_start,\n" +
+                "        CASE \n" +
+                "            WHEN #{duration} = 'this_year' THEN DATE_TRUNC('YEAR', NOW()) - INTERVAL '1 year'\n" +
+                "            WHEN #{duration} IS NOT NULL AND #{duration} != '' THEN NOW() - (CAST(#{duration} AS INTERVAL) * 2)\n" +
+                "            ELSE '1970-01-01'::timestamp\n" +
+                "        END as prev_start\n" +
+                ")\n" +
+                "SELECT \n" +
+                "    /* CLAPS */\n" +
+                "    (SELECT COALESCE(SUM(cl.likes), 0) FROM claps cl WHERE cl.articleid IN (SELECT id FROM target_articles) \n" +
+                "     AND <![CDATA[ cl.createdAt >= (SELECT curr_start FROM time_windows) ]]> ) as current_claps,\n" +
+                "    (SELECT COALESCE(SUM(cl.likes), 0) FROM claps cl WHERE cl.articleid IN (SELECT id FROM target_articles) \n" +
+                "     AND <![CDATA[ cl.createdAt >= (SELECT prev_start FROM time_windows) AND cl.createdAt < (SELECT curr_start FROM time_windows) ]]> ) as previous_claps,\n" +
+                "\n" +
+                "    /* VIEWS */\n" +
+                "    (SELECT COUNT(*) FROM article_views av WHERE av.articleid IN (SELECT id FROM target_articles) \n" +
+                "     AND <![CDATA[ av.viewedAt >= (SELECT curr_start FROM time_windows) ]]> ) as current_views,\n" +
+                "    (SELECT COUNT(*) FROM article_views av WHERE av.articleid IN (SELECT id FROM target_articles) \n" +
+                "     AND <![CDATA[ av.viewedAt >= (SELECT prev_start FROM time_windows) AND av.viewedAt < (SELECT curr_start FROM time_windows) ]]> ) as previous_views,\n" +
+                "\n" +
+                "    /* READS */\n" +
+                "    (SELECT COUNT(*) FROM article_reads ar WHERE ar.articleid IN (SELECT id FROM target_articles) \n" +
+                "     AND <![CDATA[ ar.readAt >= (SELECT curr_start FROM time_windows) ]]> ) as current_reads,\n" +
+                "    (SELECT COUNT(*) FROM article_reads ar WHERE ar.articleid IN (SELECT id FROM target_articles) \n" +
+                "     AND <![CDATA[ ar.readAt >= (SELECT prev_start FROM time_windows) AND ar.readAt < (SELECT curr_start FROM time_windows) ]]> ) as previous_reads,\n" +
+                "\n" +
+                "    /* SESSIONS */\n" +
+                "    (SELECT COUNT(*) FROM article_read_sessions ars WHERE ars.articleid IN (SELECT id FROM target_articles) \n" +
+                "     AND <![CDATA[ ars.createdAt >= (SELECT curr_start FROM time_windows) ]]> ) as current_total_sessions,\n" +
+                "    (SELECT COUNT(*) FROM article_read_sessions ars WHERE ars.articleid IN (SELECT id FROM target_articles) \n" +
+                "     AND <![CDATA[ ars.createdAt >= (SELECT prev_start FROM time_windows) AND ars.createdAt < (SELECT curr_start FROM time_windows) ]]> ) as previous_total_sessions\n" +
+                "</script>")
+        Map<String, Long> getAuthorStats(@Param("authorId") String authorId, @Param("duration") String duration);
+
+        @Select("WITH target_articles AS (\n" +
+                "    SELECT id FROM articles WHERE authorId = #{authorId}::uuid\n" +
+                "),\n" +
+                "time_series AS (\n" +
+                "    SELECT generate_series(\n" +
+                "        DATE_TRUNC('MONTH', NOW()),\n" +
+                "        NOW(),\n" +
+                "        INTERVAL '1 DAY'\n" +
+                "    ) AS day\n" +
+                ")\n" +
+                "SELECT \n" +
+                "    TO_CHAR(ts.day, 'YYYY-MM-DD HH24:MI:SS') as label,\n" +
+                "    COALESCE(c.total_claps, 0) AS claps,\n" +
+                "    COALESCE(r.total_reads, 0) AS reads,\n" +
+                "    COALESCE(v.total_views, 0) AS views\n" +
+                "FROM time_series ts\n" +
+                "-- Join Claps\n" +
+                "LEFT JOIN (\n" +
+                "    SELECT DATE_TRUNC('DAY', createdAt) AS day, SUM(likes) AS total_claps\n" +
+                "    FROM claps \n" +
+                "    WHERE articleId IN (SELECT id FROM target_articles)\n" +
+                "    GROUP BY 1\n" +
+                ") c ON c.day = DATE_TRUNC('DAY', ts.day)\n" +
+                "-- Join Reads\n" +
+                "LEFT JOIN (\n" +
+                "    SELECT DATE_TRUNC('DAY', readAt) AS day, COUNT(id) AS total_reads\n" +
+                "    FROM article_reads \n" +
+                "    WHERE articleId IN (SELECT id FROM target_articles)\n" +
+                "    GROUP BY 1\n" +
+                ") r ON r.day = DATE_TRUNC('DAY', ts.day)\n" +
+                "-- Join Views\n" +
+                "LEFT JOIN (\n" +
+                "    SELECT DATE_TRUNC('DAY', viewedAt) AS day, COUNT(id) AS total_views\n" +
+                "    FROM article_views \n" +
+                "    WHERE articleId IN (SELECT id FROM target_articles)\n" +
+                "    GROUP BY 1\n" +
+                ") v ON v.day = DATE_TRUNC('DAY', ts.day)\n" +
+                "ORDER BY ts.day;")
+        List<DailyStatsDto> getAuthorDailyStats(@Param("authorId") String authorId);
+
+        @Select("SELECT \n" +
+                "  a.title,\n" +
+                "  a.id,\n" +
+                "  a.publish_date,\n" +
+                "  (COUNT(DISTINCT av.id) * 1) +\n" +
+                "  (COUNT(DISTINCT ar.id) * 3) +\n" +
+                "  (SUM(COALESCE(cl.likes, 0)) * 5) AS interaction_score\n" +
+                "FROM articles a \n" +
+                "LEFT JOIN article_views av ON av.articleid = a.id\n" +
+                "LEFT JOIN article_reads ar ON ar.articleid = a.id\n" +
+                "LEFT JOIN claps cl ON cl.articleid = a.id\n" +
+                "WHERE a.authorid = #{authorId}::uuid\n" +
+                "GROUP BY a.id \n" +
+                "ORDER BY interaction_score DESC\n" +
+                "LIMIT 5;")
+        List<Map<String, Long>> getAuthorBestPerformingArticles(@Param("authorId") String authorId);
 }

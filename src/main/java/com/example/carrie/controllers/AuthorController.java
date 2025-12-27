@@ -88,4 +88,14 @@ public class AuthorController {
                 authorServiceImpl.recommendedAuthors(authorID, tagId, limit));
     }
 
+    @GetMapping("/recommended-tags-authors/{authorID}")
+    public ResponseEntity<?> getRecommendedInterestAuthor(
+            @PathVariable String authorID,
+            @RequestParam String tagId,
+            @RequestParam(required = false, defaultValue = "10") Long limit)
+    {
+        return Success.OK("Successfully Retrieved Topic Authors",
+                authorServiceImpl.getRecommendedInterestAuthor(authorID, tagId, limit));
+    }
+
 }

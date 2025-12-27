@@ -1,5 +1,6 @@
 package com.example.carrie.services;
 
+import com.example.carrie.dto.AnalyticsDto;
 import com.example.carrie.dto.ReadingList;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,7 +36,7 @@ public interface ArticleService {
 
     CustomDto getArticleByTag(String tagId, String authorId, Long limit, Long start);
 
-    Map<String, Object> getArticleAnalytics(String id);
+    AnalyticsDto getArticleAnalytics(String id);
 
     ReadingList addToReadingList(String authorId, String articleId);
 

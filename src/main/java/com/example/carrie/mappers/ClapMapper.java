@@ -45,4 +45,10 @@ public interface ClapMapper {
   @Delete("DELETE FROM claps WHERE id = #{id}::uuid")
   void deleteClap(@Param("id") String id);
 
+  @Select("SELECT COALESCE(SUM(cl.likes), 0) FROM claps cl JOIN articles ar ON cl.articleid = ar.id WHERE ar.authorid = #{authorId}::uuid;")
+  int countClaps(String authorId);
+
+  @Select("SELECT COALESCE(cl.likes, 0) FROM claps cl WHERE cl.articleId = #{articleId}::uuid")
+  int articleClaps(String articleId);
+
 }

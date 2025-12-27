@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.example.carrie.dto.AnalyticsDto;
 import com.example.carrie.success.Success;
 
 import jakarta.validation.Valid;
@@ -44,9 +45,9 @@ public class ArticleController {
     return Success.OK("Successfully Retrieved all Articles.", data);
   }
 
-  @GetMapping("/{id}/article-analytics")
+  @GetMapping("/{id}/analytics")
   public ResponseEntity<?> getArticleAnalytics(@PathVariable String id) {
-    Map<String, Object> data = articleServiceImpl.getArticleAnalytics(id);
+    AnalyticsDto data = articleServiceImpl.getArticleAnalytics(id);
     return Success.OK("Successfully Retrieved Article Analytics", data);
   }
 
@@ -131,7 +132,6 @@ public class ArticleController {
 
     Article data = articleServiceImpl.addArticle(article, image);
     return Success.CREATED("Successfully Created Article.", data);
-
   }
 
   @PutMapping("/{id}")
@@ -201,7 +201,6 @@ public class ArticleController {
             articleServiceImpl.getUserReadingList(authorId));
     }
 
-
     // DELETE - Remove by readingListId
     @DeleteMapping("/unsave")
     public ResponseEntity<?>  removeFromReadingList(
@@ -226,6 +225,55 @@ public class ArticleController {
                                                 @RequestParam(required = false, defaultValue = "0") Long start) {
     return Success.OK("Successfully Retrieved To Reading List",
             articleServiceImpl.getAuthorPersonalizedFeeds(authorId,limit, start));
+  }
+
+  @GetMapping("/trending-feeds")
+  public ResponseEntity<?> getTrendingFeeds() {
+    return Success.OK("Successfully Retrieved To Reading List",
+            articleServiceImpl.getTrendingFeeds());
+  }
+
+    @GetMapping("/tag/{tagId}/latest-tag-feeds")
+    public ResponseEntity<?> getLatestTagArticles(@PathVariable String tagId) {
+        return Success.OK("Successfully Retrieved To Reading List",
+                articleServiceImpl.getLatestTagFeeds(tagId));
+    }
+
+    @PostMapping("/views")
+    public ResponseEntity<?> addArticleViews(@RequestParam String articleId, @RequestParam String userId) {
+      articleServiceImpl.recordView(articleId,userId);
+      return Success.OK("Successfully Added To Article views", true);
+    }
+
+    @PostMapping("/reads")
+    public ResponseEntity<?> addArticleReads(@RequestParam String articleId, @RequestParam String userId) {
+      articleServiceImpl.recordRead(articleId,userId);
+      return Success.OK("Successfully Added To Article views", true);
+    }
+
+    @PostMapping("/read-session")
+    public ResponseEntity<?> addArticleReadSession(
+            @RequestParam String articleId, @RequestParam String userId, @RequestParam int duration) {
+      articleServiceImpl.recordReadSession(articleId,userId, duration);
+      return Success.OK("Successfully Added To Article views", true);
+    }
+
+  @GetMapping("/author-stats")
+  public ResponseEntity<?> getAuthorStats(@RequestParam String userId, @RequestParam(required = false) String duration) {
+    return Success.OK("Successfully Retrieved Author Stats",
+            articleServiceImpl.getAuthorStats(userId, duration));
+  }
+
+    @GetMapping("/author-daily-stats/{userId}")
+    public ResponseEntity<?> getAuthorDailyStats(@PathVariable String userId) {
+        return Success.OK("Successfully Retrieved Author Daily Stats",
+                articleServiceImpl.getAuthorDailyStats(userId));
+    }
+
+  @GetMapping("/author-best-articles/{userId}")
+  public ResponseEntity<?> getAuthorBestPerformingArticles(@PathVariable String userId) {
+    return Success.OK("Successfully Retrieved Author Daily Stats",
+            articleServiceImpl.getAuthorBestPerformingArticles(userId));
   }
 
 }

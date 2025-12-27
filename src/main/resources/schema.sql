@@ -131,14 +131,6 @@ CREATE TABLE IF NOT EXISTS reading_list (
     UNIQUE(authorID, articleID)
 )
 
-    CREATE TABLE IF NOT EXISTS trash (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        articleID UUID UNIQUE NOT NULL,
-        deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (articleID) REFERENCES articles(id) ON DELETE CASCADE
-    )
-
-
 CREATE TABLE IF NOT EXISTS reading_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     userID UUID NOT NULL,
@@ -148,6 +140,35 @@ CREATE TABLE IF NOT EXISTS reading_history (
     FOREIGN KEY (articleID) REFERENCES articles(id) ON DELETE CASCADE,
     UNIQUE(userID,articleID)
     )
+
+CREATE TABLE article_views (
+   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+   articleID UUID NOT NULL,
+   userID UUID NOT NULL,
+   viewedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+);
+
+CREATE INDEX idx_article_views_article ON article_views (articleID);
+CREATE INDEX idx_article_views_user ON article_views (userID);
+
+CREATE TABLE article_reads (
+   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+   articleID UUID NOT NULL,
+   userID UUID NOT NULL,
+   readAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+);
+
+CREATE INDEX idx_article_reads_article ON article_reads (articleID);
+
+CREATE TABLE article_read_sessions (
+   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+   articleID UUID NOT NULL,
+   userID UUID NOT NULL,
+   duration INTEGER NOT NULL,
+   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_article_session_article ON article_read_sessions (articleID);
+
 
 -- QUARTZ
 -- Quartz Scheduler Tables for PostgreSQL
