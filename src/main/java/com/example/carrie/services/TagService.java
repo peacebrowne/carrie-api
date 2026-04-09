@@ -8,7 +8,7 @@ public interface TagService {
     List<Tag> getAllTags();
     Tag getTagById(String id);
 
-    List<Tag> searchTags(String term);
+    List<Tag> searchTags(String term, Long limit, Long start);
 
     List<Tag> recommendedAuthorInterests(String authorID, Long limit);
 

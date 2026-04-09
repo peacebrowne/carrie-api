@@ -86,29 +86,27 @@ public class ArticleController {
   public ResponseEntity<?> searchAuthorArticles(@PathVariable String id,
       @RequestParam String term,
       @RequestParam(required = false) String sort,
-      @RequestParam(required = false) String status,
       @RequestParam(required = false) String startDate,
       @RequestParam(required = false) String endDate,
       @RequestParam(required = false, defaultValue = "10") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
     CustomDto data = articleServiceImpl.searchArticles(
-        term, id, sort, limit, start, status, startDate, endDate);
+        term, id, sort, limit, start, startDate, endDate);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 
   @GetMapping("/search")
   public ResponseEntity<?> searchArticles(
       @RequestParam String term,
-      @RequestParam(required = false) String status,
       @RequestParam(required = false) String sort,
       @RequestParam(required = false) String startDate,
       @RequestParam(required = false) String endDate,
-      @RequestParam(required = false, defaultValue = "10") Long limit,
+      @RequestParam(required = false, defaultValue = "3") Long limit,
       @RequestParam(required = false, defaultValue = "0") Long start) {
 
     CustomDto data = articleServiceImpl.searchArticles(
-        term, null, sort, limit, start, status, startDate, endDate);
+        term, null, sort, limit, start, startDate, endDate);
     return Success.OK("Successfully Retrieved Author's Articles.", data);
   }
 

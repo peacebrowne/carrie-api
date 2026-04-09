@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface AuthorService {
 
   public AuthorDto getAuthorById(String id);
+  public AuthorDto getAuthorByUsername(String username);
 
   public AuthorDto addAuthor(Author author, MultipartFile image);
 
@@ -28,4 +29,11 @@ public interface AuthorService {
   public CustomDto getFollowedAuthors(String id, Long limit, Long start);
 
   List<AuthorDto> recommendedAuthors(String authorID, String tagId, Long limit);
+
+  public CustomDto searchAuthors(
+          String term,
+          Long limit,
+          Long start,
+          String startDate,
+          String endDate);
 }

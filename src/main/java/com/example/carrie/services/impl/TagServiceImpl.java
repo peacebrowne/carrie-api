@@ -299,9 +299,9 @@ public class TagServiceImpl implements TagService {
   }
 
   @Override
-  public List<Tag> searchTags(String term) {
+  public List<Tag> searchTags(String term, Long limit, Long start) {
         try {
-            return tagMapper.searchTags(term);
+            return tagMapper.searchTags(term, limit, start);
         } catch (Exception e) {
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(

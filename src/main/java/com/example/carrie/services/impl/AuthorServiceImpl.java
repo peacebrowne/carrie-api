@@ -4,6 +4,7 @@ import com.example.carrie.dto.AuthorDto;
 import com.example.carrie.dto.CustomDto;
 import com.example.carrie.mappers.ImageMapper;
 import com.example.carrie.mappers.TagMapper;
+import com.example.carrie.models.Article;
 import com.example.carrie.models.Author;
 import com.example.carrie.exceptions.custom.BadRequest;
 import com.example.carrie.exceptions.custom.Conflict;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,12 +53,12 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
 
             // Validate the existence of the author using its ID and return the article if it exists.
             validateAuthor(id);
+            Author author = authorMapper.findById(id);
 
             // Retrieve the list of interests associated with the author
-            List<Tag> authorInterestTag = tagServiceImpl.getAuthorInterest(id);
+            List<Tag> authorInterestTag = tagServiceImpl.getAuthorInterest(author.getId());
             List<String> authorInterest = authorInterestTag.stream().map(Tag::getName).collect(Collectors.toList());
 
-            Author author = authorMapper.findById(id);
 
             // Set the retrieved interests to the author
             author.setInterests(authorInterest);
@@ -73,6 +75,37 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
             log.error("Internal Server Error: {}", e.getMessage(), e);
             throw new InternalServerError(
                     "An unexpected error occurred while fetching the author.");
+        }
+    }
+
+    @Override
+    public AuthorDto getAuthorByUsername(String username) {
+        try {
+
+            // Validate the existence of the author using its ID and return the article if it exists.
+            Optional<Author> author = authorMapper.findByEmailOrUsername(username);
+
+            if (author.isPresent()){
+                // Retrieve the list of interests associated with the author
+                List<Tag> authorInterestTag = tagServiceImpl.getAuthorInterest(author.get().getId());
+                List<String> authorInterest = authorInterestTag.stream().map(Tag::getName).collect(Collectors.toList());
+
+                // Set the retrieved interests to the author
+                author.get().setInterests(authorInterest);
+            }
+
+            AuthorDto authorDto = new AuthorDto();
+
+            // Return the author with his/her associated interests
+            return authorDto.AuthorDtoMapper(author.get());
+
+        } catch (BadRequest | NotFound e) {
+            log.error("ERROR: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while fetching the author by username.");
         }
     }
 
@@ -267,6 +300,44 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
         }
     }
 
+
+    @Override
+    public CustomDto searchAuthors(
+            String term,
+            Long limit,
+            Long start,
+            String startDate,
+            String endDate) {
+        try {
+
+            Long total = authorMapper.totalSearchAuthors(
+                    term,
+                    formatDateTime(startDate), formatDateTime(endDate));
+
+            List<AuthorDto> authors = authorMapper.searchAuthors(
+                    term, limit, start,
+                    formatDateTime(startDate), formatDateTime(endDate));
+
+            // Retrieve the list of interests associated with the author
+            authors.forEach(author -> {
+                List<Tag> authorInterestTag = tagServiceImpl.getAuthorInterest(author.getId());
+                List<String> authorInterest = authorInterestTag.stream().map(Tag::getName).collect(Collectors.toList());
+                author.setInterests(authorInterest);
+            });
+
+            return new CustomDto(total, authors);
+
+        } catch (BadRequest e) {
+            log.error("Bad Request: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Internal Server Error: {}", e.getMessage(), e);
+            throw new InternalServerError(
+                    "An unexpected error occurred while searching for an Article.");
+        }
+
+    }
+
     @Override
     public CustomDto getFollowedAuthors(String id, Long limit, Long start) {
 
@@ -324,7 +395,17 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
             validateUUID(tagId);
             validateAuthor(authorId);
 
-            return authorMapper.findRecommendedInterestAuthor(authorId, tagId, limit);
+            List<AuthorDto> authors = authorMapper.findRecommendedInterestAuthor(authorId, tagId, limit);
+            authors.forEach( author -> {
+                // Retrieve the list of interests associated with the author
+                List<Tag> authorInterestTag = tagServiceImpl.getAuthorInterest(author.getId());
+                List<String> authorInterest = authorInterestTag.stream().map(Tag::getName).collect(Collectors.toList());
+
+                // Set the retrieved interest to the author
+                author.setInterests(authorInterest);
+            });
+
+            return authors;
 
         }catch(BadRequest | NotFound e){
             log.error("Validation Error: {}", e.getMessage(), e);
@@ -358,5 +439,9 @@ public class AuthorServiceImpl extends ImageServiceImpl implements AuthorService
         }
     }
 
-    // TODO - VALIDATE MSISDN
+    private LocalDateTime formatDateTime(String datetime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return datetime != null ? LocalDateTime.parse(datetime, formatter) : null;
+    }
+
 }

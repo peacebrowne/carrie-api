@@ -24,8 +24,14 @@ public class AuthorController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> findAuthorById(@PathVariable(required = true) String id) {
+    public ResponseEntity<?> findAuthorById(@PathVariable String id) {
         return Success.OK("Successfully Retrieved Author", authorServiceImpl.getAuthorById(id));
+    }
+
+
+    @GetMapping("/username/{username}")
+    public ResponseEntity<?> findAuthorByUsername(@PathVariable String username) {
+        return Success.OK("Successfully Retrieved Author", authorServiceImpl.getAuthorByUsername(username));
     }
 
     @GetMapping
@@ -87,6 +93,20 @@ public class AuthorController {
         return Success.OK("Successfully Retrieved Recommended Topics",
                 authorServiceImpl.recommendedAuthors(authorID, tagId, limit));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchAuthors(
+            @RequestParam String term,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "3") Long limit,
+            @RequestParam(required = false, defaultValue = "0") Long start) {
+
+        CustomDto data = authorServiceImpl.searchAuthors(
+                term, limit, start, startDate, endDate);
+        return Success.OK("Successfully Retrieved Author's Articles.", data);
+    }
+
 
     @GetMapping("/recommended-tags-authors/{authorID}")
     public ResponseEntity<?> getRecommendedInterestAuthor(

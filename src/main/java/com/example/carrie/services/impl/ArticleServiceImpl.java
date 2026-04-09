@@ -220,7 +220,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
       // Get total articles for a particular author by the ID
       Long total = articleMapper.totalAuthorArticles(
-          authorID, sort, status,
+          authorID, status,
           formatDateTime(startDate), formatDateTime(endDate));
 
       // Get all articles associated with an author by ID
@@ -357,18 +357,20 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
       String sort,
       Long limit,
       Long start,
-      String status,
       String startDate,
       String endDate) {
     try {
-      validateUUID(authorID);
+
+      if (authorID != null){
+        validateUUID(authorID);
+      }
 
       Long total = articleMapper.totalSearchArticles(
-          term, authorID, sort, status,
+          term, authorID,
           formatDateTime(startDate), formatDateTime(endDate));
 
-      List<Article> articles = articleMapper.search(
-          term, authorID, sort, limit, start, status,
+      List<Article> articles = articleMapper.searchArticles(
+          term, authorID, sort, limit, start,
           formatDateTime(startDate), formatDateTime(endDate));
 
       // Add related tags to articles
@@ -665,14 +667,16 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
 
   }
 
-  public List<Article> getTrendingFeeds() {
+  public CustomDto  getTrendingFeeds() {
     try {
       // Get all articles associated with an author by ID
       List<Article> articles = articleMapper.findTrendingArticles();
 
       // Add related tags to articles
       articles.forEach(article -> article.setTags(getArticleTags(article.getId())));
-      return articles;
+
+      Long total = (long) articles.size();
+      return new CustomDto(total, articles);
 
     } catch (Exception e) {
       log.error("Internal Server Error: {}", e.getMessage(), e);
@@ -821,7 +825,7 @@ public class ArticleServiceImpl extends ImageServiceImpl implements ArticleServi
     }
   }
 
-  public List<Map<String, Long>> getAuthorBestPerformingArticles(String authorId ) {
+  public List<Map<String, Object>> getAuthorBestPerformingArticles(String authorId ) {
     try {
 
       validateUUID(authorId);

@@ -1,13 +1,13 @@
 package com.example.carrie.mappers;
 
 import com.example.carrie.dto.AuthorDto;
+import com.example.carrie.models.Article;
 import com.example.carrie.models.Author;
 import com.example.carrie.models.Login;
-import com.example.carrie.models.Tag;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Mapper
@@ -55,66 +55,133 @@ public interface AuthorMapper {
     @Select("SELECT COUNT(*) AS total FROM (SELECT a.id FROM authors a LEFT JOIN author_followers af ON a.id = af.follower WHERE af.author = #{id}::uuid)")
     Long totalFollowedAuthors(@Param("id") String id);
 
-    @Select("<script> " +
-            "WITH author_following_friends AS ( " +
-            "    SELECT follower AS friend " +
-            "    FROM author_followers " +
-            "    WHERE author = #{authorID}::uuid " +
-            "), " +
-            "friends_followed_authors AS ( " +
-            "    SELECT DISTINCT af.author AS suggested_author " +
-            "    FROM author_followers af " +
-            "    WHERE af.follower IN (SELECT friend FROM author_following_friends) " +
-            "      AND af.author != #{authorID}::uuid " +
-            "), " +
-            "recommended_authors AS ( " +
-            "    SELECT suggested_author " +
-            "    FROM friends_followed_authors " +
-            "    WHERE suggested_author NOT IN ( " +
-            "        SELECT friend FROM author_following_friends " +
-            "    ) " +
-            ") " +
-            "SELECT a.* " +
-            "FROM recommended_authors ra " +
-            "JOIN authors a ON a.id = ra.suggested_author " +
-            " <if test=\"tagId != null and tagId != ''\"> " +
-            "     JOIN author_interest ai ON ai.authorId = a.id " +
-            "       WHERE ai.tagId = #{tagId}::uuid " +
-            " </if> " +
-            "ORDER BY a.id " +
-            "LIMIT #{limit} " +
-            "</script>")
+    @Select("WITH author_following AS (\n" +
+            "    -- People I am currently following\n" +
+            "    SELECT author AS followed_user\n" +
+            "    FROM author_followers\n" +
+            "    WHERE follower = #{authorID}::uuid\n" +
+            "),\n" +
+            "friends_followed_authors AS (\n" +
+            "    -- Authors followed by the people I follow\n" +
+            "    SELECT DISTINCT af.author AS suggested_author\n" +
+            "    FROM author_followers af\n" +
+            "    WHERE af.follower IN (SELECT followed_user FROM author_following)\n" +
+            "      AND af.author != #{authorID}::uuid\n" +
+            "),\n" +
+            "recommended_authors AS (\n" +
+            "    -- Filter out authors I already follow\n" +
+            "    SELECT suggested_author\n" +
+            "    FROM friends_followed_authors\n" +
+            "    WHERE suggested_author NOT IN (\n" +
+            "        SELECT followed_user FROM author_following\n" +
+            "    )\n" +
+            ")\n" +
+            "SELECT a.*\n" +
+            "FROM authors a\n" +
+            "JOIN recommended_authors ra ON a.id = ra.suggested_author\n" +
+            "ORDER BY a.id\n" +
+            "LIMIT #{limit}")
     List<AuthorDto> getRecommendedAuthors(
             @Param("authorID") String authorID,
             @Param("tagId") String tagId,
             @Param("limit") Long limit);
 
+    @Select("<script>\n" +
+            "SELECT COUNT(DISTINCT a.id)\n" +
+            "FROM authors a\n" +
+            "<where>\n" +
+            "    (\n" +
+            "        a.username ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.email ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.firstname ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.lastname ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.address ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.biography ILIKE CONCAT('%', #{term}, '%')\n" +
+            "    )\n" +
+            "    <choose>\n" +
+            "        <when test=\"startDate != null and endDate != null\">\n" +
+            "            AND a.createdAt BETWEEN #{startDate} AND #{endDate}\n" +
+            "        </when>\n" +
+            "        <when test=\"startDate != null\">\n" +
+            "            AND a.createdAt &gt;= #{startDate}\n" +
+            "        </when>\n" +
+            "        <when test=\"endDate != null\">\n" +
+            "            AND a.createdAt &lt;= #{endDate}\n" +
+            "        </when>\n" +
+            "    </choose>\n" +
+            "</where>\n" +
+            "</script>")
+    Long totalSearchAuthors(
+            @Param("term") String term,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 
-    @Select("WITH author_following_friends AS (\n" +
-            "    SELECT author AS followed_by_me\n" +
-            "    FROM author_followers\n" +
+    @Select("<script>\n" +
+            "SELECT a.*\n" +
+            "FROM authors a\n" +
+            "<where>\n" +
+            "    -- Search Term Filter\n" +
+            "    (\n" +
+            "        a.username ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.email ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.firstname ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.lastname ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.address ILIKE CONCAT('%', #{term}, '%')\n" +
+            "        OR a.biography ILIKE CONCAT('%', #{term}, '%')\n" +
+            "    )\n" +
+            "    <choose>\n" +
+            "        <when test=\"startDate != null and endDate != null\">\n" +
+            "            AND a.createdAt BETWEEN #{startDate} AND #{endDate}\n" +
+            "        </when>\n" +
+            "        <when test=\"startDate != null\">\n" +
+            "            AND a.createdAt &gt;= #{startDate}\n" +
+            "        </when>\n" +
+            "        <when test=\"endDate != null\">\n" +
+            "            AND a.createdAt &lt;= #{endDate}\n" +
+            "        </when>\n" +
+            "    </choose>\n" +
+            "</where>\n" +
+            "GROUP BY a.id\n" +
+            "ORDER BY a.createdAt DESC\n" +
+            "LIMIT #{limit} OFFSET #{start}\n" +
+            "</script>")
+    List<AuthorDto> searchAuthors(
+            @Param("term") String term,
+            @Param("limit") Long limit,
+            @Param("start") Long start,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+
+    @Select("WITH my_following AS (\n" +
+            "    SELECT author \n" +
+            "    FROM author_followers \n" +
             "    WHERE follower = #{authorId}::uuid\n" +
             "),\n" +
-            "potential_recommendations AS (\n" +
-            "    SELECT af.author AS suggested_author, COUNT(*) as mutual_friend_count\n" +
-            "    FROM author_followers af\n" +
-            "    JOIN author_following_friends aff ON af.follower = aff.followed_by_me\n" +
-            "    WHERE af.author != #{authorId}::uuid\n" +
-            "      AND af.author NOT IN (SELECT followed_by_me FROM author_following_friends)\n" +
-            "    GROUP BY af.author\n" +
-            "),\n" +
-            "interest_filtered_authors AS (\n" +
-            "    SELECT DISTINCT pa.suggested_author, pa.mutual_friend_count\n" +
-            "    FROM potential_recommendations pa\n" +
-            "    JOIN author_interest ai ON ai.authorId = pa.suggested_author\n" +
-            "     WHERE ai.tagId = #{tagId}::uuid\n" +
+            "friends_of_friends AS (\n" +
+            "    SELECT \n" +
+            "        af2.author AS suggested_author,\n" +
+            "        COUNT(af2.follower) AS mutual_friend_count\n" +
+            "    FROM author_followers af1\n" +
+            "    JOIN author_followers af2 ON af1.author = af2.follower\n" +
+            "    WHERE af1.follower = #{authorId}::uuid\n" +
+            "      AND af2.author != #{authorId}::uuid\n" +
+            "    GROUP BY af2.author\n" +
             ")\n" +
-            "SELECT a.*, ifa.mutual_friend_count\n" +
+            "SELECT \n" +
+            "    a.*, \n" +
+            "    fof.mutual_friend_count\n" +
             "FROM authors a\n" +
-            "JOIN interest_filtered_authors ifa ON a.id = ifa.suggested_author\n" +
-            "ORDER BY ifa.mutual_friend_count DESC, a.id\n" +
-            "LIMIT #{limit};\n"
-            )
+            "JOIN friends_of_friends fof ON a.id = fof.suggested_author\n" +
+            "JOIN author_interest ai ON ai.authorID = a.id\n" +
+            "WHERE ai.tagID = #{tagId}::uuid\n" +
+            "  AND NOT EXISTS (\n" +
+            "      SELECT 1 \n" +
+            "      FROM my_following mf \n" +
+            "      WHERE mf.author = a.id\n" +
+            "  )\n" +
+            "ORDER BY fof.mutual_friend_count DESC, a.id\n" +
+            "LIMIT #{limit};")
     List<AuthorDto> findRecommendedInterestAuthor(
             @Param("authorId") String authorId,
             @Param("tagId") String tagId,

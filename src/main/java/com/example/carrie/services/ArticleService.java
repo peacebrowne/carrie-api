@@ -27,7 +27,7 @@ public interface ArticleService {
 
      Article deleteArticle(String id);
 
-     CustomDto searchArticles(String term, String authorID, String sort, Long limit, Long start, String status,
+     CustomDto searchArticles(String term, String authorID, String sort, Long limit, Long start,
             String startDate, String endDate);
 
     List<Article> getArticlesByAuthorInterest(String authorID, Long limit, Long start);

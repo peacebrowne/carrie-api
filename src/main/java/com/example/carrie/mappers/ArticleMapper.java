@@ -28,33 +28,23 @@ public interface ArticleMapper {
                 "AND a.is_trash = false " +
                 "GROUP BY a.id")
         Article findByTitle(@Param("title") String title);
-        @Select("WITH tag_articles AS (\n" +
-                "  SELECT articleId\n" +
-                "  FROM article_tags\n" +
-                "  WHERE tagId = #{tagId}::uuid\n" +
-                ")\n" +
-                "\n" +
-                "SELECT a.*, COALESCE(cl.likes, 0) AS likes, COALESCE(cm.totalComments, 0) AS totalComments\n" +
-                "FROM tag_articles ta\n" +
-                "LEFT JOIN articles a ON a.id = ta.articleId\n" +
-                "LEFT JOIN (\n" +
-                "  SELECT articleId, SUM(likes) AS likes\n" +
-                "  FROM claps\n" +
-                "  GROUP BY articleId\n" +
-                ") cl ON cl.articleId = a.id\n" +
-                "LEFT JOIN (\n" +
-                "  SELECT articleId, COUNT(id) AS totalComments\n" +
-                "  FROM comments WHERE articleId IN (\n" +
-                "    SELECT * FROM tag_articles\n" +
-                "  )\n" +
-                "  GROUP BY articleId\n" +
-                ")cm ON cm.articleId = a.id\n" +
-                "WHERE a.authorId <> #{authorId}::uuid AND a.is_trash = false AND a.status = 'published'\n" +
-                "ORDER BY cl.likes\n" +
-                "LIMIT #{limit} OFFSET #{start}"
-                )
-        List<Article> findByTag(@Param("tagId") String tagId, @Param("authorId") String authorId,
-                                @Param("limit") Long limit, @Param("start") Long start);
+
+        @Select("<script>" +
+                "SELECT a.* " +
+                "FROM articles a " +
+                "INNER JOIN article_tags at ON a.id = at.articleID " +
+                "WHERE at.tagID = #{tagId}::uuid " +
+                "  AND a.authorID != #{authorId}::uuid " +
+                "  AND a.status = 'PUBLISHED' " +
+                "  AND a.is_trash = false " +
+                "ORDER BY a.total_likes DESC " +
+                "LIMIT #{limit} OFFSET #{start} " +
+                "</script>")
+        List<Article> findByTag(
+                @Param("tagId") String tagId,
+                @Param("authorId") String authorId,
+                @Param("limit") Long limit,
+                @Param("start") Long start);
 
         @Select("SELECT COUNT(*) AS total FROM (\n" +
                 "  WITH tag_articles AS (\n" +
@@ -75,7 +65,7 @@ public interface ArticleMapper {
                 "    )  \n" +
                 "    GROUP BY articleId  \n" +
                 "  )cm ON cm.articleId = a.id  \n" +
-                "  WHERE a.authorId <> #{authorId}::uuid AND a.is_trash = false AND a.status = 'published'  \n" +
+                "  WHERE a.authorId <> #{authorId}::uuid AND a.is_trash = false AND a.status = 'PUBLISHED'  \n" +
                 "  ORDER BY cl.likes \n" +
                 ")")
         Long totalTagArticles(@Param("tagId") String tagId, @Param("authorId") String authorId);
@@ -229,156 +219,161 @@ public interface ArticleMapper {
                         @Param("endDate") LocalDateTime endDate);
 
         @Select("<script>" +
-                        "SELECT COUNT(*) AS total FROM (" +
-                        "   SELECT a.id " +
-                        "   FROM articles a " +
-                        "   LEFT JOIN claps cl ON cl.articleID = a.id " +
-                        "   LEFT JOIN comments cm ON cm.articleID = a.id " +
-                        "   <where> " +
-                        "     a.authorID = #{authorID}::uuid " +
-                        "     <if test='status != null'> AND a.status = #{status} </if> " +
-                        "     <choose> " +
-                        "       <when test='startDate != null and endDate != null'> AND a.createdAt BETWEEN #{startDate} AND #{endDate} </when> "
-                        +
-                        "       <when test='startDate != null'> AND a.createdAt &gt;= #{startDate} </when> " +
-                        "       <when test='endDate != null'> AND a.createdAt &lt;= #{endDate} </when> " +
-                        "     </choose> " +
-                        "   </where> " +
-                        "   GROUP BY a.id " +
-                        ") sub" +
-                        "</script>")
+                "SELECT COUNT(*) " +
+                "FROM articles " +
+                "<where> " +
+                "  authorID = #{authorID}::uuid " +
+                "  AND is_trash = false " +
+                "  <if test='status != null and status != \"\"'> " +
+                "    AND status = #{status} " +
+                "  </if> " +
+                "  <choose> " +
+                "    <when test='startDate != null and endDate != null'> " +
+                "      AND createdAt BETWEEN #{startDate} AND #{endDate} " +
+                "    </when> " +
+                "    <when test='startDate != null'> " +
+                "      AND createdAt &gt;= #{startDate} " +
+                "    </when> " +
+                "    <when test='endDate != null'> " +
+                "      AND createdAt &lt;= #{endDate} " +
+                "    </when> " +
+                "  </choose> " +
+                "</where> " +
+                "</script>")
         Long totalAuthorArticles(
-                        @Param("authorID") String authorID,
-                        @Param("sort") String sort,
-                        @Param("status") String status,
-                        @Param("startDate") LocalDateTime startDate,
-                        @Param("endDate") LocalDateTime endDate);
+                @Param("authorID") String authorID,
+                @Param("status") String status, // Removed 'sort' as it doesn't affect count
+                @Param("startDate") LocalDateTime startDate,
+                @Param("endDate") LocalDateTime endDate);
 
         @Select("<script>" +
-                        "SELECT a.*, " +
-                        "COALESCE(COUNT(DISTINCT cm.id), 0) AS totalComments, " +
-                        "COALESCE(SUM(cl.likes), 0) AS likes, " +
-                        "COALESCE(SUM(cl.dislikes), 0) AS dislikes " +
-                        "FROM articles a " +
-                        "LEFT JOIN claps cl ON cl.articleID = a.id " +
-                        "LEFT JOIN comments cm ON cm.articleID = a.id " +
-                        "<where> " +
-                        "  a.authorID = #{authorID}::uuid " +
-                        "  <if test='status != null'> AND a.status = #{status} </if> " +
-                        "  <choose> " +
-                        "    <when test='startDate != null and endDate != null'> AND a.createdAt BETWEEN #{startDate} AND #{endDate} </when> "
-                        +
-                        "    <when test='startDate != null'> AND a.createdAt &gt;= #{startDate} </when> " +
-                        "    <when test='endDate != null'> AND a.createdAt &lt;= #{endDate} </when> " +
-                        "  </choose> " +
-                        "</where> " +
-                        "GROUP BY a.id " +
-                        "<choose> " +
-                        "  <when test='sort == \"title\"'> ORDER BY a.title </when> " +
-                        "  <when test='sort == \"updatedAt\"'> ORDER BY a.updatedAt </when> " +
-                        "  <otherwise> ORDER BY a.createdAt </otherwise> " +
-                        "</choose> " +
-                        "LIMIT #{limit} OFFSET #{start} " +
-                        "</script>")
+                "SELECT * " +
+                "FROM articles " +
+                "<where> " +
+                "  authorID = #{authorID}::uuid " +
+                "  AND is_trash = false " +
+                "  <if test='status != null and status != \"\"'> " +
+                "    AND status = #{status} " +
+                "  </if> " +
+                "  <choose> " +
+                "    <when test='startDate != null and endDate != null'> " +
+                "      AND createdAt BETWEEN #{startDate} AND #{endDate} " +
+                "    </when> " +
+                "    <when test='startDate != null'> " +
+                "      AND createdAt &gt;= #{startDate} " +
+                "    </when> " +
+                "    <when test='endDate != null'> " +
+                "      AND createdAt &lt;= #{endDate} " +
+                "    </when> " +
+                "  </choose> " +
+                "</where> " +
+                "<choose> " +
+                "  <when test='sort == \"title\"'> ORDER BY title ASC </when> " +
+                "  <when test='sort == \"updatedAt\"'> ORDER BY updatedAt DESC </when> " +
+                "  <otherwise> ORDER BY createdAt DESC </otherwise> " +
+                "</choose> " +
+                "LIMIT #{limit} OFFSET #{start} " +
+                "</script>")
         List<Article> findAuthorsArticles(
-                        @Param("authorID") String authorID,
-                        @Param("sort") String sort,
-                        @Param("limit") Long limit,
-                        @Param("start") Long start,
-                        @Param("status") String status,
-                        @Param("startDate") LocalDateTime startDate,
-                        @Param("endDate") LocalDateTime endDate);
+                @Param("authorID") String authorID,
+                @Param("sort") String sort,
+                @Param("limit") Long limit,
+                @Param("start") Long start,
+                @Param("status") String status,
+                @Param("startDate") LocalDateTime startDate,
+                @Param("endDate") LocalDateTime endDate);
 
-        @Select("<script>" +
-                        "SELECT COUNT(*) AS total FROM (" +
-                        "   SELECT a.id " +
-                        "   FROM articles a " +
-                        "   LEFT JOIN comments cm ON cm.articleID = a.id " +
-                        "   LEFT JOIN claps cl ON cl.articleID = a.id " +
-                        "   LEFT JOIN article_tags at ON a.id = at.articleID " +
-                        "   LEFT JOIN tags t ON at.tagID = t.id " +
-                        "   <where> " +
-                        "      (a.title ILIKE CONCAT('%', #{term}, '%') " +
-                        "       OR a.content ILIKE CONCAT('%', #{term}, '%') " +
-                        "       OR a.description ILIKE CONCAT('%', #{term}, '%') " +
-                        "       OR t.name ILIKE CONCAT('%', #{term}, '%')) " +
-                        "      <if test='authorID != null and authorID != \"\"'> " +
-                        "         AND a.authorID = #{authorID}::uuid " +
-                        "      </if> " +
-                        "      <if test='status != null and status != \"\"'> " +
-                        "         AND a.status = #{status} " +
-                        "      </if> " +
-                        "      <choose> " +
-                        "         <when test='startDate != null and endDate != null'> " +
-                        "            AND a.createdAt BETWEEN #{startDate} AND #{endDate} " +
-                        "         </when> " +
-                        "         <when test='startDate != null'> " +
-                        "            AND a.createdAt &gt;= #{startDate} " +
-                        "         </when> " +
-                        "         <when test='endDate != null'> " +
-                        "            AND a.createdAt &lt;= #{endDate} " +
-                        "         </when> " +
-                        "      </choose> " +
-                        "   </where> " +
-                        "   GROUP BY a.id " +
-                        ") sub" +
-                        "</script>")
+        @Select("<script>\n" +
+                "SELECT COUNT(DISTINCT a.id)\n" +
+                "FROM articles a\n" +
+                "LEFT JOIN article_tags at ON a.id = at.articleid\n" +
+                "LEFT JOIN tags t ON at.tagid = t.id\n" +
+                "<where>\n" +
+                "    -- Search Term Filter\n" +
+                "    (\n" +
+                "        a.title ILIKE CONCAT('%', #{term}, '%')\n" +
+                "        OR a.content ILIKE CONCAT('%', #{term}, '%')\n" +
+                "        OR t.name ILIKE CONCAT('%', #{term}, '%')\n" +
+                "    )\n" +
+                "    \n" +
+                "    -- Hardcoded Defaults\n" +
+                "    AND a.is_trash = false\n" +
+                "    AND a.status = 'PUBLISHED'\n" +
+                "    \n" +
+                "    -- Optional Author Filter\n" +
+                "    <if test=\"authorID != null and authorID != ''\">\n" +
+                "        AND a.authorID = #{authorID}::uuid\n" +
+                "    </if>\n" +
+                "    \n" +
+                "    -- Date Range Filters\n" +
+                "    <choose>\n" +
+                "        <when test=\"startDate != null and endDate != null\">\n" +
+                "            AND a.createdAt BETWEEN #{startDate} AND #{endDate}\n" +
+                "        </when>\n" +
+                "        <when test=\"startDate != null\">\n" +
+                "            AND a.createdAt &gt;= #{startDate}\n" +
+                "        </when>\n" +
+                "        <when test=\"endDate != null\">\n" +
+                "            AND a.createdAt &lt;= #{endDate}\n" +
+                "        </when>\n" +
+                "    </choose>\n" +
+                "</where>\n" +
+                "</script>")
         Long totalSearchArticles(
-                        @Param("term") String term,
-                        @Param("authorID") String authorID,
-                        @Param("sort") String sort,
-                        @Param("status") String status,
-                        @Param("startDate") LocalDateTime startDate,
-                        @Param("endDate") LocalDateTime endDate);
+                @Param("term") String term,
+                @Param("authorID") String authorID,
+                @Param("startDate") LocalDateTime startDate,
+                @Param("endDate") LocalDateTime endDate);
 
-        @Select("<script>" +
-                        "SELECT DISTINCT a.*, " +
-                        "       COUNT(DISTINCT cm.id) AS totalComments, " +
-                        "       COALESCE(SUM(cl.likes), 0) AS likes, " +
-                        "       COALESCE(SUM(cl.dislikes), 0) AS dislikes " +
-                        "FROM articles a " +
-                        "LEFT JOIN comments cm ON cm.articleID = a.id " +
-                        "LEFT JOIN claps cl ON cl.articleID = a.id " +
-                        "LEFT JOIN article_tags at ON a.id = at.articleID " +
-                        "LEFT JOIN tags t ON at.tagID = t.id " +
-                        "<where> " +
-                        "   (a.title ILIKE CONCAT('%', #{term}, '%') " +
-                        "    OR a.content ILIKE CONCAT('%', #{term}, '%') " +
-                        "    OR a.description ILIKE CONCAT('%', #{term}, '%') " +
-                        "    OR t.name ILIKE CONCAT('%', #{term}, '%')) " +
-                        "   <if test='authorID != null and authorID != \"\"'> " +
-                        "      AND a.authorID = #{authorID}::uuid " +
-                        "   </if> " +
-                        "   <if test='status != null and status != \"\"'> " +
-                        "      AND a.status = #{status} " +
-                        "   </if> " +
-                        "   <choose> " +
-                        "      <when test='startDate != null and endDate != null'> " +
-                        "         AND a.createdAt BETWEEN #{startDate} AND #{endDate} " +
-                        "      </when> " +
-                        "      <when test='startDate != null'> " +
-                        "         AND a.createdAt &gt;= #{startDate} " +
-                        "      </when> " +
-                        "      <when test='endDate != null'> " +
-                        "         AND a.createdAt &lt;= #{endDate} " +
-                        "      </when> " +
-                        "   </choose> " +
-                        "</where> " +
-                        "GROUP BY a.id " +
-                        "<choose> " +
-                        "   <when test='sort == \"title\"'> ORDER BY a.title </when> " +
-                        "   <when test='sort == \"updatedAt\"'> ORDER BY a.updatedAt DESC </when> " +
-                        "   <otherwise> ORDER BY a.createdAt DESC </otherwise> " +
-                        "</choose> " +
-                        "LIMIT #{limit} OFFSET #{start} " +
-                        "</script>")
-        List<Article> search(
+        @Select("<script>\n" +
+                "SELECT a.*\n" +
+                "FROM articles a\n" +
+                "<where>\n" +
+                "    -- Search Term Filter\n" +
+                "    (\n" +
+                "        a.title ILIKE CONCAT('%', #{term}, '%')\n" +
+                "        OR a.content ILIKE CONCAT('%', #{term}, '%')\n" +
+                "    )\n" +
+                "    \n" +
+                "    AND a.is_trash = false\n" +
+                "    AND a.status = 'PUBLISHED'\n" +
+                "    \n" +
+                "    -- Optional Author Filter\n" +
+                "    <if test=\"authorID != null and authorID != ''\">\n" +
+                "        AND a.authorID = #{authorID}::uuid\n" +
+                "    </if>\n" +
+                "    \n" +
+                "    -- Optional Date Range Filters \n" +
+                "    <choose>\n" +
+                "        <when test=\"startDate != null and endDate != null\">\n" +
+                "            AND a.createdAt BETWEEN #{startDate} AND #{endDate}\n" +
+                "        </when>\n" +
+                "        <when test=\"startDate != null\">\n" +
+                "            AND a.createdAt &gt;= #{startDate}\n" +
+                "        </when>\n" +
+                "        <when test=\"endDate != null\">\n" +
+                "            AND a.createdAt &lt;= #{endDate}\n" +
+                "        </when>\n" +
+                "    </choose>\n" +
+                "</where>\n" +
+                "GROUP BY a.id\n" +
+                "ORDER BY \n" +
+                "    <choose>\n" +
+                "        <when test=\"sort == 'popular'\">\n" +
+                "            (a.total_likes * 2 + a.total_comments * 5 + a.total_views * 0.1) DESC\n" +
+                "        </when>\n" +
+                "        <otherwise>\n" +
+                "            a.createdAt DESC\n" +
+                "        </otherwise>\n" +
+                "    </choose>\n" +
+                "LIMIT #{limit} OFFSET #{start}\n" +
+                "</script>")
+        List<Article> searchArticles(
                         @Param("term") String term,
                         @Param("authorID") String authorID,
                         @Param("sort") String sort,
                         @Param("limit") Long limit,
                         @Param("start") Long start,
-                        @Param("status") String status,
                         @Param("startDate") LocalDateTime startDate,
                         @Param("endDate") LocalDateTime endDate);
 
@@ -398,43 +393,27 @@ public interface ArticleMapper {
         @Select("SELECT * FROM article_shares WHERE article_id = #{articleId}::uuid")
         List<Map<String, Object>> getSharesByArticle(@Param("articleId") String articleId);
 
-        @Select("SELECT DISTINCT ON (ar.title) ar.*, t.name FROM articles ar INNER JOIN article_tags art ON art.articleId = ar.id INNER JOIN tags t ON t.id = art.tagID INNER JOIN author_interest ai ON t.id = ai.tag_id WHERE ai.author_id = #{authorId}::uuid AND ar.status = 'published' ORDER BY ar.title, ar.createdAt DESC LIMIT #{limit} OFFSET #{start}")
+        @Select("SELECT DISTINCT ON (ar.title) ar.*, t.name FROM articles ar INNER JOIN article_tags art ON art.articleId = ar.id INNER JOIN tags t ON t.id = art.tagID INNER JOIN author_interest ai ON t.id = ai.tag_id WHERE ai.author_id = #{authorId}::uuid AND ar.status = 'PUBLISHED' ORDER BY ar.title, ar.createdAt DESC LIMIT #{limit} OFFSET #{start}")
         List<Article> findArticlesByAuthorInterest(@Param("authorId") String authorId, @Param("limit") Long limit,
                         @Param("start") Long start);
 
-        @Select("SELECT \n" +
-                "a.*,\n" +
-                "\n" +
-                "  (SELECT COUNT(*) FROM comments cm WHERE cm.articleID = a.id) AS totalComments,\n" +
-                "\n" +
-                "  COALESCE(cl.likes, 0) AS likes,\n" +
-                "  COALESCE(cl.dislikes, 0) AS dislikes\n" +
-                "\n" +
-                "FROM articles a\n" +
-                "\n" +
-                "LEFT JOIN (\n" +
-                "    SELECT articleID, \n" +
-                "           SUM(likes) AS likes, \n" +
-                "           SUM(dislikes) AS dislikes\n" +
-                "    FROM claps\n" +
-                "    GROUP BY articleID\n" +
-                ") cl ON cl.articleID = a.id\n" +
-                "\n" +
-                "LEFT JOIN article_tags at ON at.articleId = a.id \n" +
-                "LEFT JOIN author_interest ai ON ai.tagID = at.tagID \n" +
-                "\n" +
-                "WHERE \n" +
-                "    ai.authorId = #{authorId}::uuid\n" +
-                "    AND a.status = 'published'\n" +
-                "    AND a.is_trash = false\n" +
-                "\n" +
-                "GROUP BY a.id, cl.likes, cl.dislikes\n" +
-                "ORDER BY a.title\n" +
-                "LIMIT #{limit} OFFSET #{start};")
-        List<Article> findAuthorInterestedArticles(@Param("authorId") String authorID, @Param("limit") Long limit,
-                        @Param("start") Long start);
+        @Select("<script>" +
+                "SELECT DISTINCT a.* " +
+                "FROM articles a " +
+                "INNER JOIN article_tags at ON at.articleId = a.id " +
+                "INNER JOIN author_interest ai ON ai.tagID = at.tagID " +
+                "WHERE ai.authorId = #{authorId}::uuid " +
+                "  AND a.status = 'PUBLISHED' " +
+                "  AND a.is_trash = false " +
+                "ORDER BY a.title " +
+                "LIMIT #{limit} OFFSET #{start} " +
+                "</script>")
+        List<Article> findAuthorInterestedArticles(
+                @Param("authorId") String authorID,
+                @Param("limit") Long limit,
+                @Param("start") Long start);
 
-        @Select("SELECT COUNT(*) AS total FROM (SELECT a.title FROM articles a LEFT JOIN article_tags at ON at.articleId = a.id LEFT JOIN author_interest ai ON ai.tagID = at.tagID WHERE ai.authorId = #{authorId}::uuid AND a.status = 'published' ORDER BY a.title)")
+        @Select("SELECT COUNT(*) AS total FROM (SELECT a.title FROM articles a LEFT JOIN article_tags at ON at.articleId = a.id LEFT JOIN author_interest ai ON ai.tagID = at.tagID WHERE ai.authorId = #{authorId}::uuid AND a.status = 'PUBLISHED' ORDER BY a.title)")
         Long totalAuthorInterestArticles(@Param("authorId") String authorID);
 
         @Select("INSERT INTO reading_list(authorId, articleId) VALUES(#{authorId}::uuid, #{articleId}::uuid) RETURNING *")
@@ -455,7 +434,7 @@ public interface ArticleMapper {
         @Select("DELETE FROM reading_list WHERE authorId = #{authorId}::uuid AND articleId = #{articleId}::uuid RETURNING *")
         ReadingList removeFromReadingList(@Param("authorId") String authorId, @Param("articleId") String articleId);
 
-        @Update("UPDATE articles SET status = 'published' WHERE id = #{id}::uuid")
+        @Update("UPDATE articles SET status = 'PUBLISHED' WHERE id = #{id}::uuid")
         void publishArticle(String id);
 
         @Update("UPDATE articles SET status = 'scheduled', publish_date = #{dateTime} WHERE id = #{articleId}::uuid")
@@ -481,10 +460,9 @@ public interface ArticleMapper {
 
         @Select("SELECT\n" +
                 "  a.*,\n" +
-                "  COALESCE(cl.likes, 0) AS likes,\n" +
                 "  (\n" +
-                "    COUNT(DISTINCT at.tagid) * 3\n" +
-                "    + COALESCE(cl.likes, 0) * 0.2\n" +
+                "    COUNT(at.tagid) * 3\n" +
+                "    + a.total_likes * 0.2\n" +
                 "    + CASE\n" +
                 "        WHEN a.createdAt >= NOW() - INTERVAL '1 day' THEN 5\n" +
                 "        WHEN a.createdAt >= NOW() - INTERVAL '3 days' THEN 3\n" +
@@ -494,77 +472,51 @@ public interface ArticleMapper {
                 "  ) AS score\n" +
                 "FROM articles a\n" +
                 "INNER JOIN article_tags at ON at.articleid = a.id\n" +
-                "INNER JOIN author_interest ai ON ai.tagid = at.tagid AND ai.authorId = #{userId}::uuid\n" +
+                "INNER JOIN author_interest ai ON ai.tagid = at.tagid AND ai.authorID = #{userId}::uuid\n" +
                 "LEFT JOIN reading_history h ON h.articleId = a.id AND h.userId = #{userId}::uuid\n" +
-                "LEFT JOIN (\n" +
-                "  SELECT articleid, SUM(likes) AS likes\n" +
-                "  FROM claps\n" +
-                "  GROUP BY articleid\n" +
-                ") cl ON cl.articleid = a.id\n" +
-                "WHERE a.status = 'published'\n" +
+                "WHERE a.status = 'PUBLISHED'\n" +
                 "  AND a.is_trash = false\n" +
                 "  AND h.articleId IS NULL\n" +
                 "  AND a.createdAt >= NOW() - INTERVAL '1 YEAR'\n" +
-                "GROUP BY a.id, a.title, a.createdAt, a.authorId, cl.likes\n" +
+                "GROUP BY a.id \n" +
                 "ORDER BY score DESC\n" +
                 "LIMIT #{limit} OFFSET #{start};")
         List<Article> findUserPersonalizedFeeds(@Param("userId") String userId,
                                                 @Param("limit") Long limit,
                                                 @Param("start") Long start);
 
-        @Select("SELECT \n" +
-                "  COUNT(*) AS total \n" +
-                "  FROM (\n" +
-                "      SELECT \n" +
-                "        a.id,  \n" +
-                "        a.title,  \n" +
-                "        a.description, \n" +
-                "        a.authorid AS authorId,   \n" +
-                "        a.publish_date,\n" +
-                "        COUNT(at.tagid) AS interest_match_count  \n" +
-                "      FROM  articles a INNER JOIN article_tags at ON at.articleid = a.id\n" +
-                "      INNER JOIN author_interest ai ON ai.tagid = at.tagid\n" +
-                "      AND ai.authorId = #{userId}::uuid\n" +
-                "      LEFT JOIN reading_history h ON h.articleId = a.id\n" +
-                "      AND h.userId = #{userId}::uuid WHERE a.status = 'published'\n" +
-                "      AND a.is_trash = false\n" +
-                "      AND h.articleId IS NULL\n" +
-                "      GROUP BY \n" +
-                "        a.id, \n" +
-                "        a.title, \n" +
-                "        a.description, \n" +
-                "        a.authorid, \n" +
-                "        a.publish_date \n" +
-                "      ORDER BY interest_match_count DESC,\n" +
-                "        a.publish_date DESC\n" +
-                ");")
+        @Select("SELECT COUNT(DISTINCT a.id)\n" +
+                "FROM articles a\n" +
+                "INNER JOIN article_tags at ON at.articleid = a.id\n" +
+                "INNER JOIN author_interest ai ON ai.tagid = at.tagid AND ai.authorID = #{userId}::uuid\n" +
+                "LEFT JOIN reading_history h ON h.articleId = a.id AND h.userId = #{userId}::uuid\n" +
+                "WHERE a.status = 'PUBLISHED'\n" +
+                "  AND a.is_trash = false\n" +
+                "  AND h.articleId IS NULL\n" +
+                "  AND a.createdAt >= NOW() - INTERVAL '1 YEAR'"
+                )
         Long totalFindUserPersonalizedFeeds(@Param("userId") String userId);
 
-        @Select("SELECT\n" +
-                "  a.*,\n" +
-                "  COALESCE(c.likes, 0) AS likes,\n" +
-                "  COALESCE(c.dislikes, 0) AS dislikes\n" +
-                "FROM articles a\n" +
-                "JOIN claps c ON c.articleid = a.id\n" +
-                "WHERE a.createdAt >= NOW() - INTERVAL '7 days'\n" +
-                "GROUP BY a.id, a.title, c.likes, c.dislikes\n" +
-                "ORDER BY likes DESC\n" +
-                "LIMIT 10;")
-        List<Article>findTrendingArticles();
+        @Select("SELECT *, \n" +
+                "  ((total_likes * 5 + total_comments * 3 + total_views) / \n" +
+                "   POWER(EXTRACT(EPOCH FROM (NOW() - createdAt)) / 3600 + 2, 1.5)) AS trending_score\n" +
+                "FROM articles \n" +
+                "WHERE createdAt >= NOW() - INTERVAL '2 WEEKS' \n" +
+                "  AND status = 'PUBLISHED' \n" +
+                "  AND is_trash = false \n" +
+                "ORDER BY trending_score DESC \n" +
+                "LIMIT 10")
+        List<Article> findTrendingArticles();
 
-    @Select("SELECT\n" +
-            "  a.*,\n" +
-            "  COALESCE(c.likes, 0) AS likes,\n" +
-            "  COALESCE(c.dislikes, 0) AS dislikes\n" +
-            "FROM articles a\n" +
-            "JOIN claps c ON c.articleid = a.id\n" +
-            "JOIN article_tags art ON art.articleid = a.id\n" +
-            "WHERE art.tagid = #{tagId}::uuid\n" +
-            "AND a.createdAt >= NOW() - INTERVAL '7 days'\n" +
-            "GROUP BY a.id, a.title, c.likes, c.dislikes\n" +
-            "ORDER BY likes DESC\n" +
-            "LIMIT 10;")
-    List<Article>findLatestTagArticles(@Param("tagId") String tagId);
+        @Select("SELECT a.* " +
+                "FROM articles a " +
+                "INNER JOIN article_tags art ON art.articleID = a.id " +
+                "WHERE art.tagID = #{tagId}::uuid " +
+                "AND a.createdAt >= NOW() - INTERVAL '7 days' " +
+                "AND a.status = 'PUBLISHED' " +
+                "ORDER BY a.total_likes DESC " +
+                "LIMIT 10")
+        List<Article> findLatestTagArticles(@Param("tagId") String tagId);
 
         @Insert("INSERT INTO article_views (articleId, userId) VALUES (#{articleId}::uuid, #{userId}::uuid)")
         void insertArticleView(@Param("articleId") String articleId, @Param("userId") String userId);
@@ -674,20 +626,15 @@ public interface ArticleMapper {
                 "ORDER BY ts.day;")
         List<DailyStatsDto> getAuthorDailyStats(@Param("authorId") String authorId);
 
-        @Select("SELECT \n" +
-                "  a.title,\n" +
-                "  a.id,\n" +
-                "  a.publish_date,\n" +
-                "  (COUNT(DISTINCT av.id) * 1) +\n" +
-                "  (COUNT(DISTINCT ar.id) * 3) +\n" +
-                "  (SUM(COALESCE(cl.likes, 0)) * 5) AS interaction_score\n" +
-                "FROM articles a \n" +
-                "LEFT JOIN article_views av ON av.articleid = a.id\n" +
-                "LEFT JOIN article_reads ar ON ar.articleid = a.id\n" +
-                "LEFT JOIN claps cl ON cl.articleid = a.id\n" +
-                "WHERE a.authorid = #{authorId}::uuid\n" +
-                "GROUP BY a.id \n" +
-                "ORDER BY interaction_score DESC\n" +
-                "LIMIT 5;")
-        List<Map<String, Long>> getAuthorBestPerformingArticles(@Param("authorId") String authorId);
+        @Select("SELECT " +
+                "  title, " +
+                "  id, " +
+                "  publish_date, " +
+                "  (total_views * 1 + total_reads * 3 + total_likes * 5) AS interaction_score " +
+                "FROM articles " +
+                "WHERE authorId = #{authorId}::uuid " +
+                "AND status = 'PUBLISHED' " +
+                "ORDER BY interaction_score DESC " +
+                "LIMIT 5")
+        List<Map<String, Object>> getAuthorBestPerformingArticles(@Param("authorId") String authorId);
 }

@@ -27,8 +27,9 @@ public interface TagMapper {
   @Select("SELECT DISTINCT t.* FROM tags t LEFT JOIN author_interest at ON at.tagID = t.id  WHERE at.authorID = #{authorID}::uuid")
   List<Tag> getAuthorTags(@Param("authorID") String authorID);
 
-    @Select("SELECT * FROM tags WHERE name ILIKE CONCAT('%', #{term}, '%') ")
-    List<Tag> searchTags(@Param("term") String term);
+    @Select("SELECT * FROM tags WHERE name ILIKE CONCAT('%', #{term}, '%') ORDER BY name LIMIT #{limit} OFFSET #{start}")
+    List<Tag> searchTags(@Param("term") String term, @Param("limit") Long limit,
+                         @Param("start") Long start);
 
     @Insert("INSERT INTO author_interest (authorID, tagID) VALUES(#{authorID}::uuid, #{tagID}::uuid)")
     void addAuthorInterest(@Param("authorID") String authorID, @Param("tagID") String tagID);

@@ -41,6 +41,8 @@ public class AuthorDto {
         this.setFollowers(author.getFollowers());
         this.setFollowing(author.getFollowing());
         this.setUsername(author.getUsername());
+        this.setCreatedAt(author.getCreatedAt());
+        this.setUpdatedAt(author.getUpdatedAt());
         return this;
     }
 }

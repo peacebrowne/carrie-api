@@ -46,10 +46,13 @@ public class TagController {
         return Success.OK("Successfully Retrieved Tag", tagServiceImpl.getTagById(id));
     }
 
-
     @GetMapping("/search")
-    public ResponseEntity<?> searchTags(@RequestParam String term){
-        return Success.OK("Successfully Retrieved searched tags", tagServiceImpl.searchTags(term));
+    public ResponseEntity<?> searchTags(
+            @RequestParam String term,
+            @RequestParam(required = false, defaultValue = "3") Long limit,
+            @RequestParam(required = false, defaultValue = "0") Long start
+                                        ){
+        return Success.OK("Successfully Retrieved searched tags", tagServiceImpl.searchTags(term, limit, start));
     }
 
     @PutMapping("/follow")
